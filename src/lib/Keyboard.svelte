@@ -40,5 +40,17 @@
         font-size: 14px;
       }
     }
+/*    @media (prefers-color-scheme: light) {
+      .keyboard button {
+        color: black;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .keyboard button {
+        color: white;
+      }
+    }
+  */
 </style>
 

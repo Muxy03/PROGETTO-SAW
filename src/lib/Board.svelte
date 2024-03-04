@@ -55,14 +55,29 @@
       padding: 20px;
       text-align: center;
       cursor: pointer;
+      max-width: 60px;
+      max-height: 60px;
     }
 
     #container-generale{
       display: flex;
-      flex-direction: column;
+      flex-direction: column; 
       align-items: center;
       justify-content: space-between;
       height: 90vh;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .grid-item {
+        color: black;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .grid-item {
+        color: whitesmoke;
+        background-color: #151515;
+      }
     }
   
   </style>
