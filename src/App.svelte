@@ -5,17 +5,17 @@
   const size = 5;
   let visibilityKeyboard = true;
   function isMobile() {
-  const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-  return regex.test(navigator.userAgent);
-}
+    const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    return regex.test(navigator.userAgent);
+  }
 
-console.log(navigator.userAgent);
 
-if (isMobile()) {
-  visibilityKeyboard = true;
-} else {
-  visibilityKeyboard = false;
-}
+//console.log(navigator.userAgent);
+// if (isMobile()) {
+//   visibilityKeyboard = true;
+// } else {
+//   visibilityKeyboard = false;
+// }
 </script>
 
 <Navbar/>

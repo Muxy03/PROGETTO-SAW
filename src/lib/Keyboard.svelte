@@ -9,11 +9,14 @@
     {#each keys as key}
       <button class="kbc-button" on:click={()=>handler(key)}>{key}</button>
     {/each}
-    <button id="enter-btn" class="kbc-button" on:click={()=>handler('ENTER')}>ENTER</button>
+    <button id="enter-btn" class="kbc-button" on:click={()=>handler("ENTER")}>ENTER</button>
     <button id="back-btn"  class="kbc-button" on:click={()=>handler("BACKSPACE")}>BACKSPACE</button>
   </div>
 {/if}
 
+<svelte:window on:keydown|preventDefault={(e)=>{
+  if (keys.includes(e.key.toUpperCase()) || e.key.toUpperCase() == "ENTER" || e.key.toUpperCase() == "BACKSPACE") handler(e.key.toUpperCase())
+}}/>
 <style type="text/css">
     .keyboard {
       display: grid;

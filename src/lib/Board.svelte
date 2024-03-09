@@ -5,30 +5,28 @@
   const gridText:String[][] = Array.from({ length: dim }, () => Array(dim).fill(''));
   $:i=0;
 	$:j=0;
-  function handleKey(k:String) {
-      console.log(k);
-      if(k == 'BACKSPACE'){
-        gridText[i][--j] = '';
-        if(j == 0 && i!==0){
-          i--;
-          j= dim;
-        }
-        return;
+  function handleKey(k:String) {   
+    if(k == "BACKSPACE"){
+      gridText[i][--j] = '';
+      if(j == 0 && i!==0){
+        i--;
+        j= dim;
       }
-
-      if(j == dim && k!='ENTER') return;
-      
-      if(j == dim && k=='ENTER'){
-        i++;
-        j=0;
-        return;
-      }
-      
-      gridText[i][j++] = k; 
+      return;
     }
+
+    if(j == dim && k!="ENTER") return;
+    
+    if(j == dim && k =="ENTER"){
+      i++;
+      j=0;
+      return;
+    }
+    gridText[i][j++] = k; 
+  }
   </script>
   
-  <div id="container-generale">
+  <div id="container-grid">
     <div class="grid" style="grid-template-columns: repeat({dim}, 1fr);">
       {#each gridText as row, rowIndex}
         {#each row as cell, columnIndex}
@@ -36,18 +34,16 @@
         {/each}
       {/each}
     </div>
-  
+  </div>
+  <div id="container-keyboard">  
     <Keyboard visibility={visibility} handler={handleKey}/>
   </div>
-
-  <svelte:window on:keypress|preventDefault={(e)=>handleKey(e.key.toUpperCase())} />
 
   <style>
     .grid {
       display: grid;
       grid-gap: 10px;
       max-width: 600px;
-      margin-top: 50px;
     }
   
     .grid-item {
@@ -55,16 +51,25 @@
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      max-width: 60px;
-      max-height: 60px;
+      width: 60px;
+      height: 60px;
     }
 
-    #container-generale{
+    #container-grid{
       display: flex;
       flex-direction: column; 
       align-items: center;
-      justify-content: space-between;
-      height: 90vh;
+      justify-content: center;
+      height: 72vh;
+      width: -webkit-fill-available;
+    }
+
+    #container-keyboard{
+      display: flex;
+      flex-direction: row; 
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
     }
 
     @media (prefers-color-scheme: light) {
