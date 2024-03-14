@@ -1,19 +1,27 @@
 <script lang="ts">
   import Login from './Login.svelte';
+  import Register from './Register.svelte';
   let isLogin = false;
+  let isRegister = false;
 
   function loginBtn(){
     isLogin = true;
   }
+
+  function registerBtn(){
+    isRegister = true;
+  }
+
   function close(){
     isLogin = false;
+    isRegister = false;
   }
 </script>
 
 <div class="navbar">
     <div class="navbar-left">
       <button on:click={loginBtn}>Login</button>
-      <button>Bottone 2</button>
+      <button on:click={registerBtn}>Register</button>
       <button>Bottone 3</button>
     </div>
     <h1>MultiWordle</h1>
@@ -26,6 +34,10 @@
 
   {#if isLogin}
   <Login on:closeIt={close}/>
+  {/if}
+
+  {#if isRegister}
+  <Register on:closeIt={close}/>
   {/if}
 
 <style type="text/css">

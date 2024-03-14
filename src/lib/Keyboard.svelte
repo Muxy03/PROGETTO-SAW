@@ -14,9 +14,6 @@
   </div>
 {/if}
 
-<svelte:window on:keydown|preventDefault={(e)=>{
-  if (keys.includes(e.key.toUpperCase()) || e.key.toUpperCase() == "ENTER" || e.key.toUpperCase() == "BACKSPACE") handler(e.key.toUpperCase())
-}}/>
 <style type="text/css">
     .keyboard {
       display: grid;

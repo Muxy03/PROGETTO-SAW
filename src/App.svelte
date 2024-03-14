@@ -19,4 +19,4 @@
 </script>
 
 <Navbar/>
-<Board dim={size} visibility={true}/>
+<Board guess={"TESTA"} dim={size} visibility={true}/>
