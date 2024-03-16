@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
- import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore,doc,setDoc,query,where,collection,getDocs } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, query, where, collection, getDocs, addDoc, deleteDoc, updateDoc,orderBy } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA-oGenRgdhTgZfbaz4vunUE634t_y7QAo",
@@ -15,6 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+const max_attempts_waiting = 10000;
 
 interface Statics {
   total_win: number;
@@ -45,7 +46,7 @@ enum GameState {
 }
 
 // Interfaccia per lo stato di un giocatore in un gioco
-interface Player{
+interface Player {
   player_id: string;
   attempts: number; // Numero di tentativi durante la partita
 }
@@ -54,16 +55,16 @@ interface Player{
 interface Game {
   players: Player[];
   game_state: GameState;
-  winner:Player|null;
+  winner: Player | null;
+  word: string | null;
 }
 
 // Funzione per registrare un nuovo utente
 export async function register(email: string, password: string, username: string): Promise<void> {
   // Crea l'utente con email e password
-  const uid = uuidv4();
-  const userCredential = createUserWithEmailAndPassword(auth, email, password);
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const currentUser = {
-    player_id: uid,
+    player_id: userCredential.user.uid,
     username: username,
     email: email,
     password: password,
@@ -79,108 +80,119 @@ export async function register(email: string, password: string, username: string
     }
   }
 
-await setDoc(doc(db, "users", currentUser.player_id), currentUser);
+  await setDoc(doc(db, "users", currentUser.player_id), currentUser);
 }
 
-export async function login(password: string, username: string): Promise<void>{
+export async function login(password: string, username: string): Promise<void> {
   const usersRef = collection(db, "users");
   const q = query(usersRef, where("username", "==", username), where("password", "==", password));
   const querySnapshot = await getDocs(q);
-  const user = querySnapshot.docs[0].data() as User;
-
-  signInWithEmailAndPassword(auth, user.email, password)
-  .then((userCredential) => {
-    alert(`Bentornato ${user.username}`);
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    console.error(errorMessage,errorCode);
-  });
-} 
+  if (querySnapshot) {
+    const user = querySnapshot.docs[0].data() as User;
+    signInWithEmailAndPassword(auth, user.email, user.password)
+      .then((userCredential) => {
+        console.log(`Bentornato ${user.username}`);
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error(errorMessage, errorCode);
+      });
+  } else {
+    console.log("User not found!");
+  }
+}
 
 // Funzione per creare un nuovo gioco
-async function createGame(): Promise<void> {
+export async function createGame(): Promise<void> {
   try {
-    // Aggiungi il giocatore corrente alla waiting_queue
 
-    const currentGame:Game = {
+    const word = "TESTA"
+
+    const currentGame: Game = {
       players: [],
       game_state: GameState.Waiting,
-      players_state: [],
-      winner:null
+      winner: null,
+      word: null
     }
 
-    const currentUser = auth.currentUser;
-    
-    if (currentUser) {
-      const userDoc = await firebase.firestore().collection("players").doc(currentUser.uid).get();
-      const userData = userDoc.data() as Player;
-      await firebase.firestore().collection("waiting_queue").doc(currentUser.uid).set(userData);
+    let attempts_waiting = 0; // max 40 tentativi
+
+    const gameRef = await addDoc(collection(db, 'games'), currentGame);
+
+    console.log("Game created successfully!");
+
+    const user = auth.currentUser;
+    if (user) {
+      const currentPlayer: Player = {
+        player_id: user.uid,
+        attempts: 0
+      }
+      await setDoc(doc(db, "waiting_queue", user.uid), currentPlayer)
       console.log("Player added to waiting queue");
     } else {
       console.log("User not logged in");
-      return;
     }
 
-    // Attendi finché non ci sono almeno 4 giocatori nella waiting_queue
-    while (true) {
-      const waitingQueueSnapshot = await firebase.firestore().collection("waiting_queue").get();
-      const queue = waitingQueueSnapshot.docs;
-      const playersCount = waitingQueueSnapshot.size;
+    const waitingQueueSnapshot = await getDocs(collection(db, "waiting_queue"));
+    const queue = waitingQueueSnapshot.docs;
+    const playersCount = waitingQueueSnapshot.size
 
-      if (playersCount >= 4) {
+    while (playersCount < 4 && attempts_waiting < max_attempts_waiting) {
+      console.log("waiting players to join");
+      attempts_waiting++;
+    }
 
-        const players: Player[] = [];
-        for(let i=0;i<3;++i){
-          players.push(queue[i].data() as Player)
-        }
-
-        // Crea un nuovo oggetto game con i giocatori e lo stato del gioco
-        const gameId = firebase.firestore().collection("game").doc().id;
-
-        // aggiorno informazioni currentGame
-        currentGame.players = players;
-        currentGame.game_state = GameState.Ready;
-        currentGame.players_state = players.map(player => ({ player_id: player.player_id, attempts: 0 }));
-        
-        await firebase.firestore().collection("game").doc(gameId).set(currentGame);
-
-        console.log("Game created successfully!");
-
-        // Rimuovi i giocatori dalla waiting_queue dopo aver creato il gioco
-        for(let i=0;i<3;++i){
-          queue[i].ref.delete();
-        }
-        console.log("Players removed from waiting queue");
-        break;
+    if (attempts_waiting == max_attempts_waiting) {
+      console.log("Non c'è nessuno, riprova + tardi");
+    } else if (playersCount >= 4) {
+      const players: Player[] = [];
+      for (let i = 0; i < 4; ++i) {
+        players.push(queue[i].data() as Player)
       }
 
-      console.log("Waiting for more players to join...");
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Attendi 5 secondi prima di controllare di nuovo
+
+      await updateDoc(gameRef, {
+        players: players,
+        game_state: GameState.Ready,
+        word: word
+      });
+
+      console.log("Game Ready to play");
+
+      //Rimuovi i giocatori dalla waiting_queue dopo aver creato il gioco
+      for (let i = 0; i < 4; ++i) {
+        await deleteDoc(queue[i].ref)
+      }
+      console.log("Players removed from waiting queue");
     }
+
   } catch (error) {
     console.error("Error creating game:", error);
   }
 }
 
-// Funzione per avviare il gioco
-async function startGame(gameId: string): Promise<void> {
-  try {
-    const gameRef = firebase.firestore().collection("game").doc(gameId);
 
-    await gameRef.update({
+
+// Funzione per avviare il gioco
+async function updateGame(gameId: string): Promise<void> {
+  try {
+    const gameRef = doc(db, "games", gameId);
+
+    await updateDoc(gameRef, {
       game_state: GameState.InGame
     });
 
     console.log("Game started");
+
+
 
   } catch (error) {
     console.error("Error starting game:", error);
   }
 }
 
-async function endGame(gameId: string, winnerPlayerId:string): Promise<void> {
+async function endGame(gameId: string, winnerPlayerId: string): Promise<void> {
 
   try {
     const gameRef = firebase.firestore().collection("game").doc(gameId);

@@ -1,22 +1,26 @@
 <script>
   import { createEventDispatcher } from "svelte";
   import { fly } from "svelte/transition";
+  import { login } from "../assets/utils";
 
   const dispatch = createEventDispatcher();
+  let password = "";
+  let username = "";
 
   function close() {
+    login(password,username);
     dispatch("closeIt");
   }
 </script>
 
 <div class="background"/>
 <div class="container" transition:fly={{ y: -500 }}>
-  <form action="">
-    <label for="username">Username:<input type="text" /></label><br />
-    <label for="pasword">Password:<input type="password" /></label><br />
+  <div class="form">
+    <label>Username:<input bind:value={username} type="text" /></label><br />
+    <label>Password:<input bind:value={password} type="password" /></label><br />
     <button on:click={close}>Login</button>
     <button on:click={close}>Close</button>
-  </form>
+  </div>
 </div>
 
 <style>
@@ -45,7 +49,7 @@
     height: 100vh;
   }
 
-  form {
+  .form {
     width: 300px;
     padding: 20px;
     border: 1px solid #ccc;

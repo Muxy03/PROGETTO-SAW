@@ -1,6 +1,8 @@
 <script lang="ts">
   import Login from './Login.svelte';
   import Register from './Register.svelte';
+  import { createGame } from "../assets/utils";
+
   let isLogin = false;
   let isRegister = false;
 
@@ -16,17 +18,18 @@
     isLogin = false;
     isRegister = false;
   }
+
 </script>
 
 <div class="navbar">
     <div class="navbar-left">
       <button on:click={loginBtn}>Login</button>
       <button on:click={registerBtn}>Register</button>
-      <button>Bottone 3</button>
+      <button on:click={createGame}>Online</button>
     </div>
     <h1>MultiWordle</h1>
     <div class="navbar-right">
-      <button>Bottone 1</button>
+      <button>TEST API</button>
       <button>Bottone 2</button>
       <button>Bottone 3</button>
     </div>
