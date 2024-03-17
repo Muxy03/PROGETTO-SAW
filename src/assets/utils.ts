@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, query, where, collection, getDocs, addDoc, deleteDoc, updateDoc,orderBy } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, query, where, collection, getDocs, addDoc, deleteDoc, updateDoc,orderBy,limit } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA-oGenRgdhTgZfbaz4vunUE634t_y7QAo",
@@ -15,7 +15,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const max_attempts_waiting = 10000;
+const max_attempts_waiting = 1000;
 
 interface Statics {
   total_win: number;
@@ -43,6 +43,11 @@ enum GameState {
   Ready = "pronto",
   InGame = "inGame",
   Finished = "finito"
+}
+
+enum Languages {
+  it = "italiano",
+  en = "inglese"
 }
 
 // Interfaccia per lo stato di un giocatore in un gioco
@@ -104,10 +109,14 @@ export async function login(password: string, username: string): Promise<void> {
 }
 
 // Funzione per creare un nuovo gioco
-export async function createGame(): Promise<void> {
+export async function createGame(lang:string=Languages.it): Promise<void> {
   try {
 
-    const word = "TESTA"
+    const word = getWord(lang);
+    
+    if(word === ""){
+      throw new Error("ERRORE OTTENIMENTO PAROLA DA ASSOCIARE AL GAME!");
+    }
 
     const currentGame: Game = {
       players: [],
@@ -116,7 +125,7 @@ export async function createGame(): Promise<void> {
       word: null
     }
 
-    let attempts_waiting = 0; // max 40 tentativi
+    let attempts_waiting = 0;
 
     const gameRef = await addDoc(collection(db, 'games'), currentGame);
 
@@ -145,12 +154,19 @@ export async function createGame(): Promise<void> {
 
     if (attempts_waiting == max_attempts_waiting) {
       console.log("Non c'è nessuno, riprova + tardi");
+      deleteDoc(gameRef);
+      let i=0;
+      while((queue[i].data() as Player).player_id !==  currentPlayer.player_id){
+        ++i;
+      }
+      await deleteDoc(queue[i].ref);
+
     } else if (playersCount >= 4) {
+      
       const players: Player[] = [];
       for (let i = 0; i < 4; ++i) {
         players.push(queue[i].data() as Player)
       }
-
 
       await updateDoc(gameRef, {
         players: players,
@@ -172,6 +188,12 @@ export async function createGame(): Promise<void> {
   }
 }
 
+
+async function getWord(lang:string):string {
+  const response = await fetch(`https://random-word-api.herokuapp.com/word/?length=5&lang=${lang}`);
+  const word = await response.json();
+  return word[0];
+}
 
 
 // Funzione per avviare il gioco

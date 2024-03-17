@@ -23,13 +23,14 @@
 
 <div class="navbar">
     <div class="navbar-left">
+      <!-- TODO: Login/Register un solo bottone -->
       <button on:click={loginBtn}>Login</button>
       <button on:click={registerBtn}>Register</button>
-      <button on:click={createGame}>Online</button>
+      <button on:click={createGame}>VS</button>
     </div>
     <h1>MultiWordle</h1>
     <div class="navbar-right">
-      <button>TEST API</button>
+      <button>s</button>
       <button>Bottone 2</button>
       <button>Bottone 3</button>
     </div>
