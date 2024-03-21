@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, query, where, collection, getDocs, addDoc, deleteDoc, updateDoc,orderBy,limit } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, query, where, collection, getDocs, addDoc, deleteDoc, updateDoc,orderBy } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA-oGenRgdhTgZfbaz4vunUE634t_y7QAo",
@@ -16,6 +16,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const max_attempts_waiting = 1000;
+let isLogin = false;
 
 interface Statics {
   total_win: number;
@@ -97,6 +98,7 @@ export async function login(password: string, username: string): Promise<void> {
     signInWithEmailAndPassword(auth, user.email, user.password)
       .then((userCredential) => {
         console.log(`Bentornato ${user.username}`);
+        isLogin = true;
       })
       .catch((error) => {
         const errorCode = error.code;
@@ -105,43 +107,42 @@ export async function login(password: string, username: string): Promise<void> {
       });
   } else {
     console.log("User not found!");
+    isLogin = false;
   }
 }
 
 // Funzione per creare un nuovo gioco
-export async function createGame(lang:string=Languages.it): Promise<void> {
+export async function createGame(lang:string="it"): Promise<void> {
   try {
 
-    const word = getWord(lang);
+    let word = "";
+    let attempts_waiting = 0;
     
-    if(word === ""){
-      throw new Error("ERRORE OTTENIMENTO PAROLA DA ASSOCIARE AL GAME!");
+    if (!isLogin) {
+      console.log("User not logged in");
+      return;
     }
+
+    do{
+      word = getWord(lang);
+    }while(word == "");
 
     const currentGame: Game = {
       players: [],
       game_state: GameState.Waiting,
       winner: null,
-      word: null
+      word: word
     }
-
-    let attempts_waiting = 0;
-
     const gameRef = await addDoc(collection(db, 'games'), currentGame);
-
     console.log("Game created successfully!");
 
-    const user = auth.currentUser;
-    if (user) {
-      const currentPlayer: Player = {
-        player_id: user.uid,
-        attempts: 0
-      }
-      await setDoc(doc(db, "waiting_queue", user.uid), currentPlayer)
-      console.log("Player added to waiting queue");
-    } else {
-      console.log("User not logged in");
+
+    const currentPlayer: Player = {
+      player_id: user.uid,
+      attempts: 0
     }
+    await setDoc(doc(db, "waiting_queue", user.uid), currentPlayer)
+    console.log("Player added to waiting queue");
 
     const waitingQueueSnapshot = await getDocs(collection(db, "waiting_queue"));
     const queue = waitingQueueSnapshot.docs;
@@ -155,12 +156,12 @@ export async function createGame(lang:string=Languages.it): Promise<void> {
     if (attempts_waiting == max_attempts_waiting) {
       console.log("Non c'è nessuno, riprova + tardi");
       deleteDoc(gameRef);
-      let i=0;
-      while((queue[i].data() as Player).player_id !==  currentPlayer.player_id){
-        ++i;
+      for(const doc in queue){
+        if((doc.data() as Player).player_id == currentPlayer.player_id){
+          await deleteDoc(doc.ref);
+          break;
+        }
       }
-      await deleteDoc(queue[i].ref);
-
     } else if (playersCount >= 4) {
       
       const players: Player[] = [];
@@ -171,7 +172,6 @@ export async function createGame(lang:string=Languages.it): Promise<void> {
       await updateDoc(gameRef, {
         players: players,
         game_state: GameState.Ready,
-        word: word
       });
 
       console.log("Game Ready to play");
@@ -190,9 +190,8 @@ export async function createGame(lang:string=Languages.it): Promise<void> {
 
 
 async function getWord(lang:string):string {
-  const response = await fetch(`https://random-word-api.herokuapp.com/word/?length=5&lang=${lang}`);
-  const word = await response.json();
-  return word[0];
+  const word = await fetch("https://random-word-api.herokuapp.com/word/?length=5&lang=it").then(res=>res.json()).then((res)=>res[0]);
+  return word;
 }
 
 
@@ -227,4 +226,15 @@ async function endGame(gameId: string, winnerPlayerId: string): Promise<void> {
     console.error("Error starting game:", error);
   }
 
+}
+
+export async function getUserInfo():User{
+  const usersRef = collection(db, "users");
+  const CheckUser = auth.currentUser;
+  if(!isLogin){
+    return null;
+  }
+  const q = query(usersRef, where("player_id", "==", CheckUser.uid));
+  const querySnapshot = await getDocs(q); // CONTROLLO FATTO IN LOGIN
+  return querySnapshot.docs[0].data() as User;
 }

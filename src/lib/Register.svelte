@@ -8,8 +8,16 @@
   let password = "";
   let username = "";
 
-  function close() {
+  function Register(){
+    if(email=="" || password=="" || username==""){
+      console.log("no register");
+      return;
+    }
     register(email,password,username);
+    close();
+  }
+
+  function close() {
     dispatch("closeIt");
   }
 </script>
@@ -17,10 +25,10 @@
 <div class="background"/>
 <div class="container" transition:fly={{ y: -500 }}>
   <div class="form">
-    <label>Email:<input bind:value={email} type="text" /></label><br />
-    <label>Password:<input bind:value={password} type="password" /></label><br />
-    <label>Username:<input bind:value={username} type="text" /></label><br />
-    <button on:click={close}>Register</button>
+    <label>Email:<input bind:value={email} type="text" required/></label><br />
+    <label>Password:<input bind:value={password} type="password" required></label><br />
+    <label>Username:<input bind:value={username} type="text" required></label><br />
+    <button on:click={Register}>Register</button>
     <button on:click={close}>Close</button>
   </div>
 </div>

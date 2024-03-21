@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { fly } from "svelte/transition";
   import { login } from "../assets/utils";
@@ -7,8 +7,17 @@
   let password = "";
   let username = "";
 
-  function close() {
+  function Login(){
+    if(username === "" || password === ""){
+      console.log("no login");
+      return;
+    }
+
     login(password,username);
+    close();
+  }
+  
+  function close() {
     dispatch("closeIt");
   }
 </script>
@@ -16,9 +25,9 @@
 <div class="background"/>
 <div class="container" transition:fly={{ y: -500 }}>
   <div class="form">
-    <label>Username:<input bind:value={username} type="text" /></label><br />
-    <label>Password:<input bind:value={password} type="password" /></label><br />
-    <button on:click={close}>Login</button>
+    <label>Username:<input bind:value={username} type="text" required></label><br />
+    <label>Password:<input bind:value={password} type="password" required></label><br />
+    <button on:click={Login}>Login</button>
     <button on:click={close}>Close</button>
   </div>
 </div>
