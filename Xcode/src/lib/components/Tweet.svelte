@@ -12,12 +12,28 @@
 	// export let img: string | undefined;
 	// export let likes: string[];
 
-    let {avatar,tweet,email,name,id,img,likes} = $props();
+	let {
+		avatar,
+		tweet,
+		email,
+		name,
+		id,
+		img,
+		likes
+	}: {
+		avatar: string;
+		tweet: string;
+		email: string;
+		name: string;
+		id: string;
+		img: string | undefined;
+		likes: string[];
+	} = $props();
 </script>
 
 <a href="/post/{id}" class="flex gap-2 border-t p-3">
 	<Avatar.Root>
-		<Avatar.Image src={avatar as string} alt="@shadcn" />
+		<Avatar.Image src={avatar} alt="@shadcn" />
 		<Avatar.Fallback>CN</Avatar.Fallback>
 	</Avatar.Root>
 	<div class="w-full">
@@ -33,18 +49,18 @@
 		</p>
 
 		{#if img}
-			<img src={img as string} class="rounded-sm mt-2 object-contain w-full" alt="" />
+			<img src={img} class="rounded-sm mt-2 object-contain w-full" alt="" />
 		{/if}
 		<div class="flex justify-between text-sm mt-2">
 			<button class="flex transition-all group items-center gap-2 text-gray-600">
 				<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-					{#if (likes as string[])?.includes($page.data.userId)}
+					{#if likes.includes($page.data.userId)}
 						<HeartFilled class=" text-blue-500 " />
 					{:else}
 						<Heart class=" group-hover:text-blue-500 " />
 					{/if}
 				</div>
-				<span class="group-hover:text-blue-500"> {(likes as string[]).length}</span>
+				<span class="group-hover:text-blue-500"> {likes.length}</span>
 			</button>
 
 			<button class="flex transition-all group items-center gap-2 text-gray-600">

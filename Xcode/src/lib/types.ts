@@ -10,3 +10,7 @@ export interface IPost extends IUser {
 	img?: string;
 	likes: string[];
 }
+
+export interface Comment extends IPost{
+	content:string;
+}
