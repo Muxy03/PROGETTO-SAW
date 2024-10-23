@@ -39,9 +39,9 @@
 	onMount(() => {
 		const q = query(collection(db, 'comments'), where('postId', '==', $page.params.postId));
 		const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData, DocumentData>) => {
-			let newComments:string[] = [];
+			let newComments:any[] = [];
 			querySnapshot.forEach((doc) => {
-				newComments.push(doc.data() as unknown as string);
+				newComments.push(doc.data());
 			});
 
 			comments = newComments;
@@ -99,13 +99,13 @@
 				class="flex transition-all group items-center gap-2 text-gray-600"
 			>
 				<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-					{#if data.post.likes.includes(data.userId)}
+					<!-- {#if data.post.likes.includes(data.userId)}
 						<HeartFilled class=" text-blue-500 " />
 					{:else}
 						<Heart class=" group-hover:text-blue-500 " />
-					{/if}
+					{/if} -->
 				</div>
-				<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
+				<!-- <span class="group-hover:text-blue-500"> {data.post.likes.length} </span> -->
 			</button>
 			<button class="flex transition-all group items-center gap-2 text-gray-600">
 				<div class="p-1 rounded-full group-hover:bg-green-500/20">

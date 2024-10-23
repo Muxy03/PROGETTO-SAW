@@ -1,7 +1,7 @@
 <script lang='ts'>
 	import Navbar from '$lib/components/Navbar.svelte';
 	import RightSide from '$lib/components/RightSide.svelte';
-let { children } = $props();
+	let { children } = $props();
 </script>
 
 <div class="flex w-full max-w-full">
@@ -13,4 +13,3 @@ let { children } = $props();
 	
 	<RightSide />
 </div>
-

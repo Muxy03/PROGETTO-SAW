@@ -4,16 +4,15 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Tweet from '$lib/components/Tweet.svelte';
 	import { Image } from 'radix-icons-svelte';
-	import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+	import { addDoc, collection } from 'firebase/firestore';
 	import { invalidate } from '$app/navigation';
 	import { db, storage } from '$lib/firebase.js';
 	import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 	import { page } from '$app/stores';
-	import type { IPost } from '$lib/types';
 
 	let loading = $state(false);
 	let tweet = $state('');
-	let imgFile:any;
+	let imgFile: any;
 
 	let { data }: any = $props();
 </script>
@@ -73,7 +72,7 @@
 	</div>
 </div>
 <div>
-	{#if data.posts?.length > 0}
+	{#if data.posts.length > 0}
 		{#each data.posts as post}
 			<Tweet
 				avatar={post.profilePic}
