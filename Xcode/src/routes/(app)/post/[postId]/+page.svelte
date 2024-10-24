@@ -23,7 +23,7 @@
 		} else {
 			newLikes = [...data.post.likes, data.userId];
 		}
-		data.post.likes = newLikes; // Optimistically update likes
+		data.post.likes = newLikes;
 
 		try {
 			await updateDoc(postRef, {
@@ -77,8 +77,8 @@
 		<div class="flex justify-between">
 			<div class="flex flex-row gap-2">
 				<Avatar.Root>
-					<Avatar.Image src={data.post.profilePic} alt="@shadcn" /> <!--  -->
-					<Avatar.Fallback>CN</Avatar.Fallback>
+					<Avatar.Image src={data.post.profilePic as string} alt="@shadcn" />
+					<Avatar.Fallback>JD</Avatar.Fallback>
 				</Avatar.Root>
 				<div>
 					<p class="capitalize font-semibold">{data.post.name}</p>
@@ -87,7 +87,7 @@
 			</div>
 			<Button variant="secondary">follow</Button>
 		</div>
-		<p>
+		<p class="py-3">
 			{data.post.tweet}
 		</p>
 		{#if data.post.img}
@@ -95,17 +95,17 @@
 		{/if}
 		<div class="flex justify-between text-sm mt-2">
 			<button
-				onclick={handleLikes}
+				onclick={async() => await handleLikes}
 				class="flex transition-all group items-center gap-2 text-gray-600"
 			>
 				<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-					<!-- {#if data.post.likes.includes(data.userId)}
+					{#if data.post.likes.includes(data.userId)}
 						<HeartFilled class=" text-blue-500 " />
 					{:else}
 						<Heart class=" group-hover:text-blue-500 " />
-					{/if} -->
+					{/if}
 				</div>
-				<!-- <span class="group-hover:text-blue-500"> {data.post.likes.length} </span> -->
+				<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
 			</button>
 			<button class="flex transition-all group items-center gap-2 text-gray-600">
 				<div class="p-1 rounded-full group-hover:bg-green-500/20">
@@ -129,7 +129,7 @@
 	</div>
 	<div class="flex gap-2 px-4 py-3">
 		<Avatar.Root>
-			<Avatar.Image src="https://github.com/shadcn.png" alt="@shadcn" />
+			<Avatar.Image src={data.user.profilePic} alt="@shadcn" />
 			<Avatar.Fallback>CN</Avatar.Fallback>
 		</Avatar.Root>
 		<input

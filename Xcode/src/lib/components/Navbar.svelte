@@ -89,8 +89,8 @@
                 <Avatar.Fallback>JD</Avatar.Fallback>
             </Avatar.Root>
             <div class="hidden md:inline-block">
-                <p class="font-medium capitalize">{$page.data.user.name}</p>
-                <p class="text-gray-800">{$page.data.user.email}</p>
+                <p class="font-medium capitalize">{$page.data.user?.name}</p>
+                <p class="text-gray-800">{$page.data.user?.email}</p>
             </div>
         </div>
 
@@ -107,7 +107,7 @@
 	<Dialog.Content class="max-h-[500px]  overflow-auto ">
 		<div class="flex gap-2">
 			<Avatar.Root>
-				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" />
+				<Avatar.Image src={$page.data.user?.profilePic} alt="@shadcn" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 			<div class="flex-1">
