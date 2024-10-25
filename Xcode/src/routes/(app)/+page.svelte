@@ -7,21 +7,35 @@
 	import { addDoc, collection } from 'firebase/firestore';
 	import { invalidate } from '$app/navigation';
 	import { db, storage } from '$lib/firebase.js';
-	import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-	import { page } from '$app/stores';
+	import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+	import type {IPost, IUser } from '$lib/types';
 
 	let loading = $state(false);
 	let tweet = $state('');
-	let imgFile: any;
+	let fileinput: any;
+	let imgFile: any | null = $state(null);
 
-	let { data }: any = $props();
+	const onFileSelected = (e: any): void => {
+		let image = e.target.files[0];
+		let reader = new FileReader();
+		reader.readAsDataURL(image);
+		reader.onload = (e) => {
+			imgFile = e.target?.result;
+		};
+	};
+
+	let { data }: { data: { userId: string; user: IUser; posts: IPost[] } } = $props();
+
+	$effect(() => {
+		console.log(imgFile);
+	});
 </script>
 
 <Header />
 
 <div class="px-4 py-2 gap-2 hidden md:flex">
 	<Avatar.Root>
-		<Avatar.Image src={$page.data.user?.profilePic} alt="@shadcn" />
+		<Avatar.Image src={data.user.profilePic} alt="@shadcn" />
 		<Avatar.Fallback>JD</Avatar.Fallback>
 	</Avatar.Root>
 
@@ -32,10 +46,21 @@
 			placeholder="what is happening?!"
 			bind:value={tweet}
 		/>
+		{#if imgFile}
+			<img src={imgFile} alt="" />
+		{/if}
+
 		<div class="flex border-t py-3 justify-between items-center">
 			<div class="flex gap-2 items-center">
-				<input type="file" hidden id="img" accept="image/png, image/jpeg, image/gif, image/webp" />
-				<label for="">
+				<input
+					onchange={onFileSelected}
+					bind:this={fileinput}
+					type="file"
+					hidden
+					id="img"
+					accept="image/png, image/jpeg, image/gif, image/webp"
+				/>
+				<label for="img">
 					<Image class="w-7 h-7 text-primary cursor-pointer" />
 				</label>
 			</div>
@@ -44,8 +69,8 @@
 					loading = true;
 					let url = '';
 					if (imgFile) {
-						const storageRef = ref(storage, `posts/${data.userId}/${imgFile.name}`);
-						const result = await uploadBytes(storageRef, imgFile);
+						const storageRef = ref(storage, `posts/${data.userId}/IMG.png`);
+						const result = await uploadString(storageRef, imgFile, 'data_url');
 						url = await getDownloadURL(result.ref);
 					}
 
@@ -59,6 +84,7 @@
 					loading = false;
 					tweet = '';
 					invalidate('posts');
+					imgFile = null;
 				}}
 				disabled={tweet?.length < 5 || loading}
 			>

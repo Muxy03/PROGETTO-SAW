@@ -4,7 +4,7 @@ export interface IUser {
 	profilePic: string;
 }
 export interface IPost extends IUser {
-	id?: string;
+	id: string;
 	tweet: string;
 	userID: string;
 	img?: string;
@@ -13,4 +13,8 @@ export interface IPost extends IUser {
 
 export interface Comment extends IPost{
 	content:string;
+}
+
+export interface HTMLInputEvent extends Event {
+    target: HTMLInputElement & EventTarget;
 }

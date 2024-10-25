@@ -21,6 +21,7 @@
 		img: string | undefined;
 		likes: string[];
 	} = $props();
+
 </script>
 
 <a href="/post/{id}" class="flex gap-2 border-t p-3">
