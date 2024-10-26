@@ -5,7 +5,7 @@
 	import * as Avatar from '$lib/components/ui/avatar';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import { signOut } from 'firebase/auth';
 	import { auth, db, storage } from '$lib/firebase';
 	import { getDownloadURL, ref, uploadString } from 'firebase/storage';
@@ -90,14 +90,14 @@
 			<span class="hidden md:inline"> Post </span>
 		</Button>
 
-		<div class="flex gap-2 items-center justify-center">
+		<div class="flex gap-2 items-center justify-center py-3">
 			<Avatar.Root>
-				<Avatar.Image src={$page.data.user?.profilePic} alt="@shadcn" />
+				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer"/>
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 			<div class="hidden md:inline-block">
-				<p class="font-medium capitalize">{$page.data.user?.name}</p>
-				<p class="text-gray-800">{$page.data.user?.email}</p>
+				<p class="font-medium capitalize">{$page.data.user.name}</p>
+				<p class="text-gray-800">{$page.data.user.email}</p>
 			</div>
 		</div>
 
@@ -159,6 +159,9 @@
 						...$page.data.user,
 						likes: []
 					});
+					tweet = '';
+					invalidate('posts');
+					imgFile = null;
 					openModal = !openModal;
 				}}>Post</Button
 			>

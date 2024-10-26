@@ -3,23 +3,33 @@
 	import { ArrowBottomLeft, ChatBubble, Heart, HeartFilled } from 'radix-icons-svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { addDoc, collection, doc, onSnapshot, query, QuerySnapshot, updateDoc, where } from 'firebase/firestore';
+	import {
+		addDoc,
+		collection,
+		doc,
+		onSnapshot,
+		query,
+		QuerySnapshot,
+		updateDoc,
+		where
+	} from 'firebase/firestore';
 	import { db } from '$lib/firebase';
 	import { page } from '$app/stores';
 	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import type { IPost, IUser,Comment } from '$lib/types';
+	import type { IPost, IUser, Comment } from '$lib/types';
 	import type { DocumentData } from 'firebase-admin/firestore';
+	import TweetComment from '$lib/components/TweetComment.svelte';
 
-	let { data }: any = $props();
+	let { data }: { data: { user: IUser; userId: string; comments: Comment[]; post: IPost } } = $props();
 	let comment = $state('');
-    let comments = $state(data.comments);
+	let comments = $state(data.comments);
 
 	const handleLikes = async () => {
 		let newLikes;
 		const postRef = doc(db, 'posts', $page.params.postId);
 		if (data.post.likes.includes(data.userId)) {
-			newLikes = data.post.likes.filter((id : any) => id !== data.userId);
+			newLikes = data.post.likes.filter((id: string) => id !== data.userId);
 		} else {
 			newLikes = [...data.post.likes, data.userId];
 		}
@@ -36,43 +46,35 @@
 		invalidate($page.params.postId);
 	};
 
+	let like = $state(handleLikes());
+
 	onMount(() => {
 		const q = query(collection(db, 'comments'), where('postId', '==', $page.params.postId));
-		const unsubscribe = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData, DocumentData>) => {
-			let newComments:any[] = [];
-			querySnapshot.forEach((doc) => {
-				newComments.push(doc.data());
-			});
+		const unsubscribe = onSnapshot(
+			q,
+			(querySnapshot: QuerySnapshot<DocumentData, DocumentData>) => {
+				let newComments: Comment[] = [];
+				querySnapshot.forEach((doc) => {
+					newComments.push(doc.data() as Comment);
+				});
 
-			comments = newComments;
-		});
+				comments = newComments;
+			}
+		);
 		return () => {
 			unsubscribe();
 		};
 	});
 
-	// const notOp = async () => {
-	// 	const postRef = doc(db, 'posts', $page.params.postId);
-	// 	if (data.post.likes.includes(data.userId)) {
-	// 		await updateDoc(postRef, {
-	// 			likes: arrayRemove(data.userId)
-	// 		});
-	// 	} else {
-	// 		await updateDoc(postRef, {
-	// 			likes: arrayUnion(data.userId)
-	// 		});
-	// 	}
-	// 	invalidate($page.params.postId);
-	// };
 </script>
 
-<header class="p-4 flex items-center gap-3">
+<!-- <header class="p-4 flex items-center gap-3">
 	<ArrowBottomLeft />
 
 	<h1 class="capitalize font-semibold text-lg">post</h1>
-</header>
+</header> -->
 
-<div>
+<div class="py-7">
 	<div class="px-4">
 		<div class="flex justify-between">
 			<div class="flex flex-row gap-2">
@@ -93,37 +95,42 @@
 		{#if data.post.img}
 			<img src={data.post.img} alt="" />
 		{/if}
-		<div class="flex justify-between text-sm mt-2">
-			<button
-				onclick={async() => await handleLikes}
-				class="flex transition-all group items-center gap-2 text-gray-600"
-			>
-				<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-					{#if data.post.likes.includes(data.userId)}
-						<HeartFilled class=" text-blue-500 " />
-					{:else}
-						<Heart class=" group-hover:text-blue-500 " />
-					{/if}
-				</div>
-				<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
-			</button>
+
+		<div class="flex gap-3 text-sm mt-2">
+			{#await like}
+				<button
+					onclick={() => (like = handleLikes())}
+					class="flex transition-all group items-center gap-2 text-gray-600"
+				>
+					<div class="p-1 rounded-full group-hover:bg-blue-500/20">
+						{#if data.post.likes.includes(data.userId)}
+							<HeartFilled class=" text-blue-500 " />
+						{:else}
+							<Heart class=" group-hover:text-blue-500 " />
+						{/if}
+					</div>
+					<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
+				</button>
+			{:then _}
+				<button
+					onclick={() => (like = handleLikes())}
+					class="flex transition-all group items-center gap-2 text-gray-600"
+				>
+					<div class="p-1 rounded-full group-hover:bg-blue-500/20">
+						{#if data.post.likes.includes(data.userId)}
+							<HeartFilled class=" text-blue-500 " />
+						{:else}
+							<Heart class=" group-hover:text-blue-500 " />
+						{/if}
+					</div>
+					<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
+				</button>
+			{/await}
 			<button class="flex transition-all group items-center gap-2 text-gray-600">
 				<div class="p-1 rounded-full group-hover:bg-green-500/20">
 					<ChatBubble class=" group-hover:text-green-500 " />
 				</div>
-				<span class="group-hover:text-green-500"> 5 </span>
-			</button>
-			<button class="flex transition-all group items-center gap-2 text-gray-600">
-				<div class="p-1 rounded-full group-hover:bg-pink-500/20">
-					<ChatBubble class=" group-hover:text-pink-500 " />
-				</div>
-				<span class="group-hover:text-pink-500"> 5 </span>
-			</button>
-			<button class="flex transition-all group items-center gap-2 text-gray-600">
-				<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-					<ChatBubble class=" group-hover:text-blue-500 " />
-				</div>
-				<span class="group-hover:text-blue-500"> 5 </span>
+				<span class="group-hover:text-green-500"> {comments.length} </span>
 			</button>
 		</div>
 	</div>
@@ -145,25 +152,25 @@
 				const c = await addDoc(collection(db, 'comments'), {
 					content: newComment,
 					name: data.user.name,
+					email: data.user.email,
 					profilePic: data.user.profilePic,
 					postId: $page.params.postId
 				});
-				comment = '';
-				console.log(c);
 			}}
 			disabled={comment.length < 1}>comment</Button
 		>
 	</div>
 	<div class="w-full">
 		{#each comments as comment}
-			<Tweet
+			<TweetComment
 				likes={new Array<string>()}
 				avatar={comment.profilePic}
 				name={comment.name}
 				tweet={comment.content}
-                email={comment.email}
-                id={comment.id!}
-                img= {comment.img}
+				email={comment.email}
+				postId={comment.postId}
+				userId = {data.userId}
+				img={comment.img}
 			/>
 		{/each}
 	</div>

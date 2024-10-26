@@ -1,103 +1,34 @@
 <script lang="ts">
-	import Header from '$lib/components/Header.svelte';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import Button from '$lib/components/ui/button/button.svelte';
 	import Tweet from '$lib/components/Tweet.svelte';
-	import { Image } from 'radix-icons-svelte';
-	import { addDoc, collection } from 'firebase/firestore';
-	import { invalidate } from '$app/navigation';
-	import { db, storage } from '$lib/firebase.js';
-	import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-	import type {IPost, IUser } from '$lib/types';
-
-	let loading = $state(false);
-	let tweet = $state('');
-	let fileinput: any;
-	let imgFile: any | null = $state(null);
-
-	const onFileSelected = (e: any): void => {
-		let image = e.target.files[0];
-		let reader = new FileReader();
-		reader.readAsDataURL(image);
-		reader.onload = (e) => {
-			imgFile = e.target?.result;
-		};
-	};
+	import type { IPost, IUser } from '$lib/types';
 
 	let { data }: { data: { userId: string; user: IUser; posts: IPost[] } } = $props();
-
-	$effect(() => {
-		console.log(imgFile);
-	});
+	let section = $state(0);
 </script>
 
-<Header />
-
-<div class="px-4 py-2 gap-2 hidden md:flex">
-	<Avatar.Root>
-		<Avatar.Image src={data.user.profilePic} alt="@shadcn" />
-		<Avatar.Fallback>JD</Avatar.Fallback>
-	</Avatar.Root>
-
-	<div class="px-3 w-full border rounded-xl">
-		<input
-			type="text"
-			class="bg-transparent text-lg w-full px-2 outline-none h-10"
-			placeholder="what is happening?!"
-			bind:value={tweet}
-		/>
-		{#if imgFile}
-			<img src={imgFile} alt="" />
-		{/if}
-
-		<div class="flex border-t py-3 justify-between items-center">
-			<div class="flex gap-2 items-center">
-				<input
-					onchange={onFileSelected}
-					bind:this={fileinput}
-					type="file"
-					hidden
-					id="img"
-					accept="image/png, image/jpeg, image/gif, image/webp"
-				/>
-				<label for="img">
-					<Image class="w-7 h-7 text-primary cursor-pointer" />
-				</label>
-			</div>
-			<Button
-				on:click={async () => {
-					loading = true;
-					let url = '';
-					if (imgFile) {
-						const storageRef = ref(storage, `posts/${data.userId}/IMG.png`);
-						const result = await uploadString(storageRef, imgFile, 'data_url');
-						url = await getDownloadURL(result.ref);
-					}
-
-					await addDoc(collection(db, 'posts'), {
-						tweet,
-						userID: data.userId,
-						img: url,
-						...data.user,
-						likes: []
-					});
-					loading = false;
-					tweet = '';
-					invalidate('posts');
-					imgFile = null;
-				}}
-				disabled={tweet?.length < 5 || loading}
-			>
-				{#if loading}
-					loading...
-				{:else}
-					Post
-				{/if}
-			</Button>
-		</div>
+<header class="bg-background/70 sticky border z-10 top-0 left-0 backdrop-blur">
+	<h1 class="text-center capitalize text-lg font-semibold py-3.5 px-4">home</h1>
+	<div class="grid grid-cols-2 text-md">
+		<button
+			onclick={() => (section = 0)}
+			class:disable={section == 1}
+			class:active={section == 0}
+			class="py-4 capitalize hover:bg-white/10"
+		>
+			for you
+		</button>
+		<button
+			onclick={() => (section = 1)}
+			class:disable={section == 0}
+			class:active={section == 1}
+			class="py-4 capitalize hover:bg-white/10"
+		>
+			following
+		</button>
 	</div>
-</div>
-<div>
+</header>
+
+<div class="min-h-screen overflow-y-auto">
 	{#if data.posts.length > 0}
 		{#each data.posts as post}
 			<Tweet
@@ -106,7 +37,8 @@
 				img={post.img}
 				name={post.name}
 				tweet={post.tweet}
-				id={post.id!}
+				id={post.id}
+				userId={data.userId}
 				likes={post.likes}
 			/>
 		{/each}
@@ -114,3 +46,14 @@
 		no data
 	{/if}
 </div>
+
+<style>
+	.active {
+		color: rgb(255 255 255);
+		font-weight: 700;
+	}
+
+	.disable {
+		color: rgb(209 213 219);
+	}
+</style>

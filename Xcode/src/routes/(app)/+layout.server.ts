@@ -13,6 +13,7 @@ export const load = async ({ locals }) => {
             const docSnap = await getDoc(docRef);
             return docSnap.data()
         } catch (e) {
+            console.error(e);
             throw error(400, 'an error occured')
         }
     }

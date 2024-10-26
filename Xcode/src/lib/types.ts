@@ -2,6 +2,7 @@ export interface IUser {
 	name: string;
 	email: string;
 	profilePic: string;
+	folowers:IUser[];
 }
 export interface IPost extends IUser {
 	id: string;
@@ -13,6 +14,7 @@ export interface IPost extends IUser {
 
 export interface Comment extends IPost{
 	content:string;
+	postId:string;
 }
 
 export interface HTMLInputEvent extends Event {
