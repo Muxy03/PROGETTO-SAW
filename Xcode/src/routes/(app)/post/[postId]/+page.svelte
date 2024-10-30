@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Tweet from '$lib/components/Tweet.svelte';
 	import { ArrowBottomLeft, ChatBubble, Heart, HeartFilled } from 'radix-icons-svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -7,6 +6,7 @@
 		addDoc,
 		collection,
 		doc,
+		getDoc,
 		onSnapshot,
 		query,
 		QuerySnapshot,
@@ -15,13 +15,15 @@
 	} from 'firebase/firestore';
 	import { db } from '$lib/firebase';
 	import { page } from '$app/stores';
-	import { invalidate } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import type { IPost, IUser, Comment } from '$lib/types';
 	import type { DocumentData } from 'firebase-admin/firestore';
 	import TweetComment from '$lib/components/TweetComment.svelte';
+	import { redirect } from '@sveltejs/kit';
 
-	let { data }: { data: { user: IUser; userId: string; comments: Comment[]; post: IPost } } = $props();
+	let { data }: { data: { user: IUser; userId: string; comments: Comment[]; post: IPost } } =
+		$props();
 	let comment = $state('');
 	let comments = $state(data.comments);
 
@@ -41,12 +43,49 @@
 			});
 		} catch (error) {
 			console.error('Failed to update likes:', error);
-			invalidate($page.params.postId);
+			invalidate(data.post.id);
 		}
-		invalidate($page.params.postId);
+		invalidate(data.post.id);
+	};
+	
+	const handleFollowers = async () => {
+		newFollowers = [];
+		if (data.userId !== data.post.userID) {
+			const userRef = doc(db, 'users', data.post.userID);
+			try {
+				const userSnap = await getDoc(userRef);
+				if (userSnap.exists()) {
+					newFollowers = [...userSnap.data().followers];
+
+					if (newFollowers.includes(data.userId)) {
+						newFollowers = newFollowers.filter((id) => id !== data.userId);
+					} else {
+						newFollowers = [...newFollowers, data.userId];
+					}
+
+					data.user.followers = [...newFollowers]
+
+					const update = async()=>{
+						await updateDoc(userRef, {
+							followers: newFollowers
+						});
+						console.log("aggiornato");
+					}
+
+					update();
+				}
+			} catch (e) {
+				console.error('Failed to update followers:', e);
+				invalidate(data.userId);
+			}
+
+			invalidate(data.userId);
+		}
 	};
 
 	let like = $state(handleLikes());
+	let newFollowers: string[] = $state([]);
+	let follow = $state(handleFollowers());
 
 	onMount(() => {
 		const q = query(collection(db, 'comments'), where('postId', '==', $page.params.postId));
@@ -66,6 +105,11 @@
 		};
 	});
 
+	$effect(() => {
+		console.log("post")
+		//console.log("data",data.user.followers)
+		//$inspect(newFollowers);
+	});
 </script>
 
 <!-- <header class="p-4 flex items-center gap-3">
@@ -77,17 +121,31 @@
 <div class="py-7">
 	<div class="px-4">
 		<div class="flex justify-between">
-			<div class="flex flex-row gap-2">
+			<button class="flex flex-row gap-2" onclick={() => goto(`/about/${data.post.userID}`)}>
 				<Avatar.Root>
-					<Avatar.Image src={data.post.profilePic as string} alt="@shadcn" />
+					<Avatar.Image src={data.post.profilePic} alt="@shadcn" />
 					<Avatar.Fallback>JD</Avatar.Fallback>
 				</Avatar.Root>
 				<div>
 					<p class="capitalize font-semibold">{data.post.name}</p>
 					<p class="text-sm text-gray-800">@{data.post.email}</p>
 				</div>
-			</div>
-			<Button variant="secondary">follow</Button>
+			</button>
+			{#await follow}
+				{#if data.user.followers.includes(data.userId)}
+					<Button onclick={() => (follow = handleFollowers())} variant="secondary">following</Button
+					>
+				{:else}
+					<Button onclick={() => (follow = handleFollowers())}>follow</Button>
+				{/if}
+			{:then _}
+				{#if data.user.followers.includes(data.userId)}
+					<Button onclick={() => (follow = handleFollowers())} variant="secondary">following</Button
+					>
+				{:else}
+					<Button onclick={() => (follow = handleFollowers())}>follow</Button>
+				{/if}
+			{/await}
 		</div>
 		<p class="py-3">
 			{data.post.tweet}
@@ -154,7 +212,7 @@
 					name: data.user.name,
 					email: data.user.email,
 					profilePic: data.user.profilePic,
-					postId: $page.params.postId
+					postId: data.post.id
 				});
 			}}
 			disabled={comment.length < 1}>comment</Button
@@ -168,8 +226,8 @@
 				name={comment.name}
 				tweet={comment.content}
 				email={comment.email}
-				postId={comment.postId}
-				userId = {data.userId}
+				postId={comment.id}
+				userId={data.userId}
 				img={comment.img}
 			/>
 		{/each}

@@ -1,9 +1,29 @@
 <script lang="ts">
 	import Tweet from '$lib/components/Tweet.svelte';
+	import { db } from '$lib/firebase';
 	import type { IPost, IUser } from '$lib/types';
+	import { doc,getDoc } from 'firebase/firestore';
+	import { onMount } from 'svelte';
 
 	let { data }: { data: { userId: string; user: IUser; posts: IPost[] } } = $props();
+	let coso:string[] = [];
+	
+	const following = async() =>{
+		const usersId = [...data.posts].map((post) => post.userID).filter((id)=> id !== data.userId);
+		const usersRef:any[] = [];
+		usersId.forEach((id)=>{
+			usersRef.push(doc(db, 'users', id));
+		})
+
+		for(const ref of usersRef){
+			const userSnap = await getDoc(ref);
+			if(userSnap.exists()){
+				coso = [...coso,...((userSnap.data() as IUser).followers.filter((id)=> id === data.userId))];
+			}
+		}
+	};
 	let section = $state(0);
+	let f = $state(following());
 </script>
 
 <header class="bg-background/70 sticky border z-10 top-0 left-0 backdrop-blur">
@@ -18,7 +38,7 @@
 			for you
 		</button>
 		<button
-			onclick={() => (section = 1)}
+			onclick={() =>{section = 1;(f = following())}}
 			class:disable={section == 0}
 			class:active={section == 1}
 			class="py-4 capitalize hover:bg-white/10"
@@ -27,9 +47,34 @@
 		</button>
 	</div>
 </header>
+{#if section == 1}
+{#await f}
+<p>LOADING</p>
+{:then _} 
+{#if data.posts.length > 0}
+	<div class="min-h-screen overflow-y-auto">
+		{#each data.posts.filter((post)=> !coso.includes(post.userID)) as post}
+			<Tweet
+				avatar={post.profilePic}
+				email={post.email}
+				img={post.img}
+				name={post.name}
+				tweet={post.tweet}
+				id={post.id}
+				userId={data.userId}
+				likes={post.likes}
+			/>
+		{/each}
+	</div>
+{:else}
+	<div class="min-h-screen flex items-center justify-items-center">
+		<p class="w-full text-center text-5xl">NO Posts</p>
+	</div>
+{/if}
 
-<div class="min-h-screen overflow-y-auto">
-	{#if data.posts.length > 0}
+{/await}
+{:else if data.posts.length > 0}
+	<div class="min-h-screen overflow-y-auto">
 		{#each data.posts as post}
 			<Tweet
 				avatar={post.profilePic}
@@ -42,10 +87,12 @@
 				likes={post.likes}
 			/>
 		{/each}
-	{:else}
-		no data
-	{/if}
-</div>
+	</div>
+{:else}
+	<div class="min-h-screen flex items-center justify-items-center">
+		<p class="w-full text-center text-5xl">NO Posts</p>
+	</div>
+{/if}
 
 <style>
 	.active {

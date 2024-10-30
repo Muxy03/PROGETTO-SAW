@@ -10,7 +10,6 @@
 		try {
 			const { user } = await signInWithPopup(auth, provider);
 			const idToken = await user.getIdToken();
-			//console.log('🚀 ~ file: +page.svelte:11 ~ login ~ idToken:', idToken);
 			
             await fetch('/login', {
 				method: 'POST',
@@ -25,7 +24,8 @@
 					{
 						name: user.displayName,
 						email: user.email,
-						profilePic: user.photoURL
+						profilePic: user.photoURL,
+						followers: []
 					},
 					{
 						merge: true
@@ -42,5 +42,5 @@
 
 <div class="flex flex-col items-center h-screen  w-screen border justify-center">
 	<img src="/logo.svg" alt="">
-	<Button on:click={login}>login with google</Button>
+	<Button onclick={login}>login with google</Button>
 </div>

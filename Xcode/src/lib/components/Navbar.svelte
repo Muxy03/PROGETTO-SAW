@@ -10,6 +10,7 @@
 	import { auth, db, storage } from '$lib/firebase';
 	import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 	import { addDoc, collection } from 'firebase/firestore';
+	import { v4 as uuidv4 } from 'uuid';
 
 	let fileinput: any;
 	let imgFile: any = $state();
@@ -25,6 +26,7 @@
 
 	let openModal = $state(false);
 	let tweet = $state('');
+	const local = $state($page.data.localUser);
 
 	const sidebarOptions = [
 		{
@@ -56,6 +58,7 @@
 		});
 		goto('/login');
 	};
+
 </script>
 
 <div
@@ -92,12 +95,12 @@
 
 		<div class="flex gap-2 items-center justify-center py-3">
 			<Avatar.Root>
-				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer"/>
+				<Avatar.Image src={local ?local.profilePic : $page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer"/>
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 			<div class="hidden md:inline-block">
-				<p class="font-medium capitalize">{$page.data.user.name}</p>
-				<p class="text-gray-800">{$page.data.user.email}</p>
+				<p class="font-medium capitalize">{local ? local.name : $page.data.user.name}</p>
+				<p class="text-gray-800">{local ? local.name : $page.data.user.email}</p>
 			</div>
 		</div>
 
@@ -113,7 +116,7 @@
 	<Dialog.Content class="max-h-[500px]  overflow-auto ">
 		<div class="flex gap-2">
 			<Avatar.Root>
-				<Avatar.Image src={$page.data.user?.profilePic} alt="@shadcn" />
+				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 			<div class="flex-1">
@@ -147,7 +150,7 @@
 				onclick={async () => {
 					let url = '';
 					if (imgFile) {
-						const storageRef = ref(storage, `posts/${$page.data.userId}/IMG.png`);
+						const storageRef = ref(storage, `posts/${$page.data.userId}/${uuidv4()}.png`);
 						const result = await uploadString(storageRef, imgFile, 'data_url');
 						url = await getDownloadURL(result.ref);
 					}

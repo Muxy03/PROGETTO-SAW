@@ -4,9 +4,6 @@ import { doc, getDoc } from "firebase/firestore"
 
 export const load = async ({ locals }) => {
     const userId = locals.userID;
-    if (!userId) {
-        throw redirect(303, '/login')
-    }
     const getUser = async (uid: string) => {
         try {
             const docRef = doc(db, 'users', uid);
@@ -18,5 +15,11 @@ export const load = async ({ locals }) => {
         }
     }
 
-    return { userId, user: await getUser(locals.userID!) }
+    if(userId){
+        const data = { userId, user: await getUser(userId) };
+        if (!data.user) {
+            throw redirect(303, '/login')
+        }
+        return data
+    }
 }
