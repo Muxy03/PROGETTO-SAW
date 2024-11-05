@@ -9,8 +9,10 @@
 	import { signOut } from 'firebase/auth';
 	import { auth, db, storage } from '$lib/firebase';
 	import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-	import { addDoc, collection } from 'firebase/firestore';
+	import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 	import { v4 as uuidv4 } from 'uuid';
+	import Card from '$lib/components/Card.svelte';
+	import type { IUser } from '$lib/types';
 
 	let fileinput: any;
 	let imgFile: any = $state();
@@ -25,31 +27,11 @@
 	};
 
 	let openModal = $state(false);
+	let openlogOut = $state(false);
+	let openSearch = $state(false);
 	let tweet = $state('');
-	const local = $state($page.data.localUser);
 
-	const sidebarOptions = [
-		{
-			icons: Home,
-			title: 'home',
-			href: '/'
-		},
-		{
-			icons: MagnifyingGlass,
-			title: 'explorer',
-			href: '/'
-		},
-		{
-			icons: Bell,
-			title: 'notification',
-			href: '/'
-		},
-		{
-			icons: ThickArrowLeft,
-			title: 'logout',
-			href: '/login'
-		}
-	];
+	const sidebarOptions = [ Home,MagnifyingGlass,Pencil1,Bell];
 
 	const logOut = async () => {
 		await signOut(auth);
@@ -59,61 +41,96 @@
 		goto('/login');
 	};
 
+		let query = $state('');
+	let usrs: IUser[] = $state([]);
+
+	const fusers = async (cond: boolean = false) => {
+		if (cond) {
+			const usersId = [...$page.data.posts]
+				.map((post) => post.userID)
+				.filter((id) => id !== $page.data.userId);
+			const usersRef: any[] = [];
+
+			usersId.forEach((id) => {
+				usersRef.push(doc(db, 'users', id));
+			});
+
+			for (const ref of usersRef) {
+				const userSnap = await getDoc(ref);
+				if (userSnap.exists()) {
+					if ((userSnap.data() as IUser).name !== $page.data.userId && usrs.filter((usr)=> usr.name === (userSnap.data() as IUser).name).length === 0) {
+						usrs.push(userSnap.data() as IUser);
+					}
+				}
+			}
+		}
+	};
+
+	let users = $state(fusers());
+
+
 </script>
 
-<div
-	class="fixed bottom-2 shadow-lg
-    shadow-gray-500/30 hover:shadow-md left-0
-    duration-300 overflow-hidden border-t rounded-xl
-    border z-50 w-full h-16 max-w-md inset-x-0
-    mx-auto flex justify-between flex-row
-    md:px-3 md:flex-[0.4] md:border md:rounded-none
-    md:w-screen md:flex-col md:h-screen md:sticky md:z-10
-    md:top-0 md:mx-0"
->
-	<div
-		class="px-3 w-full flex justify-between items-center flex-row md:py-2 md:h-screen md:flex-col md:mt-5"
-	>
-		{#each sidebarOptions as { href, icons, title }}
-			{#if title === 'logout'}
-				<button onclick={logOut} class="flex gap-[22px] hover:bg-white/10 p-3 w-fit rounded-full">
-					<svelte:component this={icons} class="w-7 h-7" />
-					<p class=" text-lg capitalize hidden md:inline-block pr-5">{title}</p>
+<div class="fixed bottom-0 z-50 w-full rounded-lg -translate-x-1/2 bg-white border-t border-gray-200 left-1/2 dark:bg-gray-700 dark:border-gray-600">
+    <div class="w-full">
+        <div class="grid max-w-xs grid-cols-3 gap-1 p-1 mx-auto my-2 bg-gray-100 rounded-lg dark:bg-gray-600" role="group">
+            <button type="button" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg">
+                New
+            </button>
+            <button type="button" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-300 dark:text-gray-900 rounded-lg">
+                Popular
+            </button>
+            <button type="button" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg">
+                Following
+            </button>
+        </div>
+    </div>
+    <div class="grid h-full max-w-lg grid-cols-5 mx-auto">
+		{#each sidebarOptions as Component}
+			{#if Component === ThickArrowLeft}
+				<button onclick={logOut} data-tooltip-target="tooltip-home" type="button" class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+					<Component size={30}/>
 				</button>
+			{:else if Component === Pencil1}
+				<button data-tooltip-target="tooltip-post" type="button" onclick={() => (openModal = true)} class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+				<Pencil1 size={30}/>
+					<span class="sr-only">New post</span>
+				</button>
+			{:else if Component === MagnifyingGlass}
+				<button data-tooltip-target="tooltip-post" type="button" onclick={() => (openSearch = true)} class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+				<MagnifyingGlass size={30}/>
+					<span class="sr-only">New post</span>
+				</button>
+			{:else if Component === Home}
+			<button data-tooltip-target="tooltip-post" type="button" onclick={() => goto('/')} class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+				<Home size={30}/>
+				<span class="sr-only">New post</span>
+			</button>
 			{:else}
-				<a {href} class="flex gap-[22px] hover:bg-white/10 p-3 w-fit rounded-full">
-					<svelte:component this={icons} class="w-7 h-7" />
-					<p class=" text-lg capitalize hidden md:inline-block pr-5">{title}</p>
-				</a>
+				<button data-tooltip-target="tooltip-home" type="button" class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+					<Component size={30}/>
+				</button>
 			{/if}
 		{/each}
+        
 
-		<Button size="icon" on:click={() => (openModal = true)} class="md:py-6  md:w-full">
-			<Pencil1 class="md:mr-2  h-4 w-4" />
-			<span class="hidden md:inline"> Post </span>
-		</Button>
-
-		<div class="flex gap-2 items-center justify-center py-3">
-			<Avatar.Root>
-				<Avatar.Image src={local ?local.profilePic : $page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer"/>
+        <button onclick={()=> (openlogOut = true)} data-tooltip-target="tooltip-settings" type="button" class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+           <Avatar.Root>
+				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer"/>
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
-			<div class="hidden md:inline-block">
-				<p class="font-medium capitalize">{local ? local.name : $page.data.user.name}</p>
-				<p class="text-gray-800">{local ? local.name : $page.data.user.email}</p>
-			</div>
-		</div>
-
-		<!-- <img src={Logo} alt="Logo" class="hidden md:inline md:w-full md:h-auto"> -->
-	</div>
+        </button>
+    </div>
 </div>
+
+
 <Dialog.Root
 	open={openModal}
 	onOpenChange={(o) => {
 		openModal = !openModal;
 	}}
 >
-	<Dialog.Content class="max-h-[500px]  overflow-auto ">
+	<Dialog.Content class="max-h-[500px] overflow-auto ">
 		<div class="flex gap-2">
 			<Avatar.Root>
 				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" />
@@ -169,5 +186,49 @@
 				}}>Post</Button
 			>
 		</div>
+	</Dialog.Content>
+</Dialog.Root>
+
+
+<Dialog.Root
+	open={openlogOut}
+	onOpenChange={(o) => {
+		openlogOut = !openlogOut;
+	}}
+>
+	<Dialog.Content class=" max-w-[200px] max-h-[500px] flex items-center justify-center">
+		<Button onclick={logOut} class="w-20">Log Out</Button>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root
+	open={openSearch}
+	onOpenChange={(o) => {
+		openSearch = !openSearch;
+	}}
+>
+	<Dialog.Content class=" max-w-[500px] max-h-[500px] flex flex-col items-center justify-center">
+		<div class="rounded-md h-fit flex items-center px-2 bg-gray-800 w-96">
+			<MagnifyingGlass class="h-5 w-5" />
+			<input
+				placeholder="search"
+				type="text"
+				class="h-10 px-2 outline-none bg-transparent flex-1"
+				onkeypress={() => (users = fusers(true))}
+				bind:value={query}
+			/>
+		</div>
+
+		{#await users}
+			<p>LOADING ...</p>
+		{:then _}
+			{#if query.length === 0 || usrs.filter((usr) => usr.name == query).length === 0}
+				<p>NO USERS</p>
+			{:else}
+				{#each usrs.filter((usr) => usr.name === query) as usr}
+					<Card Title={usr.name} {action} content={'diocane'} />
+				{/each}
+			{/if}
+		{/await}
 	</Dialog.Content>
 </Dialog.Root>

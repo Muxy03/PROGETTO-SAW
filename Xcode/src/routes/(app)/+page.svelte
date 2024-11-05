@@ -26,7 +26,7 @@
 	let f = $state(following());
 </script>
 
-<header class="bg-background/70 sticky border z-10 top-0 left-0 backdrop-blur">
+<header class="bg-background/70 sticky border z-10 top-0 left-0 backdrop-blur mb-2">
 	<h1 class="text-center capitalize text-lg font-semibold py-3.5 px-4">home</h1>
 	<div class="grid grid-cols-2 text-md">
 		<button
@@ -47,6 +47,7 @@
 		</button>
 	</div>
 </header>
+
 {#if section == 1}
 {#await f}
 <p>LOADING</p>
@@ -54,8 +55,9 @@
 {#if data.posts.length > 0}
 	<div class="min-h-screen overflow-y-auto">
 		{#each data.posts.filter((post)=> !coso.includes(post.userID)) as post}
+		{@const pp = post.profilePic}
 			<Tweet
-				avatar={post.profilePic}
+				avatar={pp}
 				email={post.email}
 				img={post.img}
 				name={post.name}
@@ -74,10 +76,11 @@
 
 {/await}
 {:else if data.posts.length > 0}
-	<div class="min-h-screen overflow-y-auto">
+	<div class="min-h-screen flex flex-col gap-5">
 		{#each data.posts as post}
+		{@const pp = post.profilePic}
 			<Tweet
-				avatar={post.profilePic}
+				avatar={pp}
 				email={post.email}
 				img={post.img}
 				name={post.name}

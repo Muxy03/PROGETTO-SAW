@@ -6,10 +6,10 @@
 	import { doc, getDoc } from 'firebase/firestore';
 	import { MagnifyingGlass } from 'radix-icons-svelte';
 
-	let query = $state('');
-	let usrs: IUser[] = $state([]);
 	const Title = 'subscribe to premium';
 	const action = 'subscribe';
+	let query = $state('');
+	let usrs: IUser[] = $state([]);
 
 	const fusers = async (cond: boolean = false) => {
 		if (cond) {

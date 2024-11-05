@@ -4,12 +4,13 @@
 	let { children } = $props();
 </script>
 
-<div class="flex w-full max-w-full">
-	<Navbar/>
+<div class="flex flex-col gap-3 max-w-[700px] mx-auto">
 
-	<main class="min-h-screen flex-1">
+	<main class="min-h-screen z-10">
 		{@render children()}
 	</main>
 	
-	<RightSide />
+	<Navbar/>
 </div>
+
+

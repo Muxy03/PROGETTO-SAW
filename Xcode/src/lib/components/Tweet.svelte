@@ -103,9 +103,9 @@
 
 <a
 	href={admin ? '' : `/post/${id}`}
-	class="flex gap-2 border-t border-b items-center justify-center"
+	class="flex gap-2 items-center justify-center"
 >
-	<div class="w-full">
+	<div class="w-fit h-fit">
 		{#if avatar}
 			<div class="flex flex-row gap-4 items-center">
 				<Avatar.Root>
@@ -124,7 +124,7 @@
 		</p>
 
 		{#if img}
-			<img src={img} class="w-full rounded-sm object-contain" alt="" />
+			<img src={img} class="w-full h-auto rounded-sm object-contain" alt="" />
 		{/if}
 
 		<div class="flex gap-3 text-sm p-3">

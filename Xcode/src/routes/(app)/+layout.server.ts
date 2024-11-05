@@ -18,8 +18,10 @@ export const load = async ({ locals }) => {
     if(userId){
         const data = { userId, user: await getUser(userId) };
         if (!data.user) {
-            throw redirect(303, '/login')
+            redirect(303, '/login')
         }
         return data
+    }else{
+        redirect(303, '/login')
     }
 }
