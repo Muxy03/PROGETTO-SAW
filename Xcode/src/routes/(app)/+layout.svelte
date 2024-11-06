@@ -1,6 +1,5 @@
 <script lang='ts'>
 	import Navbar from '$lib/components/Navbar.svelte';
-	import RightSide from '$lib/components/RightSide.svelte';
 	let { children } = $props();
 </script>
 

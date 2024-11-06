@@ -15,6 +15,7 @@ export async function POST({ request, cookies }) {
         throw error(401, 'Recent sign in required!');
     }
 }
+
 export const DELETE = async ({ cookies }) => {
     cookies.delete('__session', { path: '/' });
 

@@ -50,64 +50,50 @@
 	// 	}
 	// 	invalidate($page.params.postId);
 	// };
-	const handleFollowers = async () => {
-		newFollowers = [];
-		if (data.userId !== data.localId) {
-			const userRef = doc(db, 'users', data.userId);
-
-			try {
-				const userSnap = await getDoc(userRef);
-				if (userSnap.exists()) {
-					newFollowers = [...userSnap.data().followers];
-
-					if (newFollowers.includes(data.localId)) {
-						newFollowers = newFollowers.filter((id) => id !== data.localId);
-					} else {
-						newFollowers = [...newFollowers, data.localId];
-					}
-
-					data.user.followers = [...newFollowers]
-
-					const update = async()=>{
-						await updateDoc(userRef, {
-							followers: newFollowers
-						});
-						console.log("aggiornato");
-					}
-
-					update();
-
+	const handleFollowers = async (cond:boolean = false) => {
+		if(cond){
+			if (data.userId !== data.localId) {
+				try {
+					data.user.followers = await (
+						await fetch(`http://localhost:5173/api?user=${data.userId}`, { method: 'PUT' })
+					).json();
+				} catch (e) {
+					console.error('Failed to update followers:', e);
+					invalidate("pro");
 				}
-			} catch (e) {
-				console.error('Failed to update followers:', e);
-				invalidate(data.userId);
+	
+				invalidate("pro");
 			}
-
-			invalidate(data.userId);
 		}
 	};
 
-	let newFollowers: string[] = $state([]);
+	let followers: string[] = $state([]);
 	let follow = $state(handleFollowers());
-
 
 	// let like = $state(handleLikes());
 
-	// onMount(() => {
-	// 	const unsub = onSnapshot(doc(db, 'users', $page.data.userId), (doc) => {
-	// 		//console.log('Current data: ', doc.data());
-	// 		newFollowers = doc.data()?.followers;
-	// 	});
+	onMount(() => {
+		//TODO: query come x comments ma per posts
 
-	// 	return () => {
-	// 		unsub();
-	// 	};
-	// });
+		const getFollower = async () => {
+			const response = await fetch(`http://localhost:5173/api?user=${data.userId}`);
+			followers = await response.json();
+		};
+
+		const unsub = onSnapshot(doc(db, 'users', data.userId), (doc) => {
+			followers = doc.data()!.followers;
+		});
+
+		getFollower();
+
+		return () =>{
+			unsub();
+		}
+	});
 
 	$effect(() => {
-		console.log("user")
-		//console.log("data",data.user.followers)
-		//$inspect(newFollowers);
+		console.log('user');
+		$inspect("data",followers)
 	});
 </script>
 
@@ -134,17 +120,17 @@
 			</div>
 			{#await follow}
 				{#if data.user.followers.includes(data.localId)}
-					<Button onclick={() => (follow = handleFollowers())} variant="secondary">following</Button
+					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary">following</Button
 					>
 				{:else}
-					<Button onclick={() => (follow = handleFollowers())}>follow</Button>
+					<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
 				{/if}
 			{:then _}
 				{#if data.user.followers.includes(data.localId)}
-					<Button onclick={() => (follow = handleFollowers())} variant="secondary">following</Button
+					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary">following</Button
 					>
 				{:else}
-					<Button onclick={() => (follow = handleFollowers())}>follow</Button>
+					<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
 				{/if}
 			{/await}
 		</div>

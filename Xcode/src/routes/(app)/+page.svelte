@@ -24,6 +24,13 @@
 	};
 	let section = $state(0);
 	let f = $state(following());
+
+	onMount(async ()=>{
+		const response = await fetch(`http://localhost:5173/api?user=${data.userId}`,{
+			method:'POST',
+		})
+		console.log(await response.json())
+	})
 </script>
 
 <header class="bg-background/70 sticky border z-10 top-0 left-0 backdrop-blur mb-2">

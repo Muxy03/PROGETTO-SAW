@@ -17,7 +17,7 @@
 	let fileinput: any;
 	let imgFile: any = $state();
 
-	const onFileSelected = (e:any): void => {
+	const onFileSelected = (e: any): void => {
 		let image = e.target.files![0];
 		let reader = new FileReader();
 		reader.readAsDataURL(image);
@@ -31,17 +31,22 @@
 	let openSearch = $state(false);
 	let tweet = $state('');
 
-	const sidebarOptions = [ Home,MagnifyingGlass,Pencil1,Bell];
+	const sidebarOptions = [Home, MagnifyingGlass, Pencil1, Bell];
 
 	const logOut = async () => {
-		await signOut(auth);
-		await fetch('/login', {
+		const response = await fetch('/login', {
 			method: 'DELETE'
 		});
-		goto('/login');
+
+		const { status } = await response.json();
+
+		if (status === 'signedOut') {
+			await signOut(auth);
+			goto('/login');
+		}
 	};
 
-		let query = $state('');
+	let query = $state('');
 	let usrs: IUser[] = $state([]);
 
 	const fusers = async (cond: boolean = false) => {
@@ -58,7 +63,10 @@
 			for (const ref of usersRef) {
 				const userSnap = await getDoc(ref);
 				if (userSnap.exists()) {
-					if ((userSnap.data() as IUser).name !== $page.data.userId && usrs.filter((usr)=> usr.name === (userSnap.data() as IUser).name).length === 0) {
+					if (
+						(userSnap.data() as IUser).name !== $page.data.userId &&
+						usrs.filter((usr) => usr.name === (userSnap.data() as IUser).name).length === 0
+					) {
 						usrs.push(userSnap.data() as IUser);
 					}
 				}
@@ -68,61 +76,102 @@
 
 	let users = $state(fusers());
 
-
+	$effect(() => {});
 </script>
 
-<div class="fixed bottom-0 z-50 w-full rounded-lg -translate-x-1/2 bg-white border-t border-gray-200 left-1/2 dark:bg-gray-700 dark:border-gray-600">
-    <div class="w-full">
-        <div class="grid max-w-xs grid-cols-3 gap-1 p-1 mx-auto my-2 bg-gray-100 rounded-lg dark:bg-gray-600" role="group">
-            <button type="button" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg">
-                New
-            </button>
-            <button type="button" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-300 dark:text-gray-900 rounded-lg">
-                Popular
-            </button>
-            <button type="button" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg">
-                Following
-            </button>
-        </div>
-    </div>
-    <div class="grid h-full max-w-lg grid-cols-5 mx-auto">
+<div
+	class="fixed bottom-0 z-50 w-full rounded-lg -translate-x-1/2 bg-white border-t border-gray-200 left-1/2 dark:bg-gray-700 dark:border-gray-600"
+>
+	<div class="w-full">
+		<div
+			class="grid max-w-xs grid-cols-3 gap-1 p-1 mx-auto my-2 bg-gray-100 rounded-lg dark:bg-gray-600"
+			role="group"
+		>
+			<button
+				type="button"
+				class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
+			>
+				New
+			</button>
+			<button
+				type="button"
+				class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-300 dark:text-gray-900 rounded-lg"
+			>
+				Popular
+			</button>
+			<button
+				type="button"
+				class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
+			>
+				Following
+			</button>
+		</div>
+	</div>
+	<div class="grid h-full max-w-lg grid-cols-5 mx-auto">
 		{#each sidebarOptions as Component}
 			{#if Component === ThickArrowLeft}
-				<button onclick={logOut} data-tooltip-target="tooltip-home" type="button" class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-					<Component size={30}/>
+				<button
+					onclick={logOut}
+					data-tooltip-target="tooltip-home"
+					type="button"
+					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+				>
+					<Component size={30} />
 				</button>
 			{:else if Component === Pencil1}
-				<button data-tooltip-target="tooltip-post" type="button" onclick={() => (openModal = true)} class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-				<Pencil1 size={30}/>
+				<button
+					data-tooltip-target="tooltip-post"
+					type="button"
+					onclick={() => (openModal = true)}
+					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+				>
+					<Pencil1 size={30} />
 					<span class="sr-only">New post</span>
 				</button>
 			{:else if Component === MagnifyingGlass}
-				<button data-tooltip-target="tooltip-post" type="button" onclick={() => (openSearch = true)} class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-				<MagnifyingGlass size={30}/>
+				<button
+					data-tooltip-target="tooltip-post"
+					type="button"
+					onclick={() => (openSearch = true)}
+					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+				>
+					<MagnifyingGlass size={30} />
 					<span class="sr-only">New post</span>
 				</button>
 			{:else if Component === Home}
-			<button data-tooltip-target="tooltip-post" type="button" onclick={() => goto('/')} class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-				<Home size={30}/>
-				<span class="sr-only">New post</span>
-			</button>
+				<button
+					data-tooltip-target="tooltip-post"
+					type="button"
+					onclick={() => goto('/')}
+					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+				>
+					<Home size={30} />
+					<span class="sr-only">New post</span>
+				</button>
 			{:else}
-				<button data-tooltip-target="tooltip-home" type="button" class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-					<Component size={30}/>
+				<button
+					data-tooltip-target="tooltip-home"
+					type="button"
+					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+				>
+					<Component size={30} />
 				</button>
 			{/if}
 		{/each}
-        
 
-        <button onclick={()=> (openlogOut = true)} data-tooltip-target="tooltip-settings" type="button" class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-           <Avatar.Root>
-				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer"/>
+		<button
+			onclick={() => (openlogOut = true)}
+			data-tooltip-target="tooltip-settings"
+			type="button"
+			class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+		>
+			<Avatar.Root>
+				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
-        </button>
-    </div>
+		</button>
+	</div>
 </div>
-
 
 <Dialog.Root
 	open={openModal}
@@ -159,9 +208,7 @@
 				accept="image/png, image/jpeg, image/gif, image/webp"
 			/>
 			<label for="img">
-				<Image
-					class="w-7 h-7 text-primary cursor-pointer"
-				/>
+				<Image class="w-7 h-7 text-primary cursor-pointer" />
 			</label>
 			<Button
 				onclick={async () => {
@@ -188,7 +235,6 @@
 		</div>
 	</Dialog.Content>
 </Dialog.Root>
-
 
 <Dialog.Root
 	open={openlogOut}
@@ -226,7 +272,7 @@
 				<p>NO USERS</p>
 			{:else}
 				{#each usrs.filter((usr) => usr.name === query) as usr}
-					<Card Title={usr.name} {action} content={'diocane'} />
+					<Card Title={usr.name} action={'fanculo'} content={'diocane'} />
 				{/each}
 			{/if}
 		{/await}

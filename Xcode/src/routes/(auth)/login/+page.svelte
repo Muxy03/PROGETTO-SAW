@@ -10,7 +10,7 @@
 		try {
 			const { user } = await signInWithPopup(auth, provider);
 			const idToken = await user.getIdToken();
-			
+
             await fetch('/login', {
 				method: 'POST',
 				body: JSON.stringify(idToken)

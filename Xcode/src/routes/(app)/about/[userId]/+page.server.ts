@@ -6,7 +6,7 @@ import { error } from '@sveltejs/kit';
 export const load = async ({ depends, locals, params }) => {
 	const localId = locals.userID;
 	const { userId } = params;
-	depends(userId);
+	depends("pro");
 
 	const getUser = async (uid: string) => {
 		try {

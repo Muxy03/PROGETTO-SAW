@@ -47,47 +47,36 @@
 		}
 		invalidate(data.post.id);
 	};
-	
-	const handleFollowers = async () => {
-		newFollowers = [];
-		if (data.userId !== data.post.userID) {
-			const userRef = doc(db, 'users', data.post.userID);
-			try {
-				const userSnap = await getDoc(userRef);
-				if (userSnap.exists()) {
-					newFollowers = [...userSnap.data().followers];
 
-					if (newFollowers.includes(data.userId)) {
-						newFollowers = newFollowers.filter((id) => id !== data.userId);
-					} else {
-						newFollowers = [...newFollowers, data.userId];
-					}
-
-					data.user.followers = [...newFollowers]
-
-					const update = async()=>{
-						await updateDoc(userRef, {
-							followers: newFollowers
-						});
-						console.log("aggiornato");
-					}
-
-					update();
+	const handleFollowers = async (cond: boolean = false) => {
+		if (cond) {
+			if (data.userId !== data.post.userID) {
+				try {
+					followers = await (
+						await fetch(`http://localhost:5173/api?user=${data.post.userID}`, { method: 'PUT' })
+					).json();
+				} catch (e) {
+					console.error('Failed to update followers:', e);
+					invalidate('pro');
 				}
-			} catch (e) {
-				console.error('Failed to update followers:', e);
-				invalidate(data.userId);
-			}
 
-			invalidate(data.userId);
+				invalidate('pro');
+			}
 		}
 	};
 
 	let like = $state(handleLikes());
-	let newFollowers: string[] = $state([]);
 	let follow = $state(handleFollowers());
+	let followers = $state<string[]>([]);
 
 	onMount(() => {
+		const getFollower = async () => {
+			const response = await fetch(`http://localhost:5173/api?user=${data.post.userID}`);
+			followers = await response.json();
+		};
+
+		getFollower();
+
 		const q = query(collection(db, 'comments'), where('postId', '==', $page.params.postId));
 		const unsubscribe = onSnapshot(
 			q,
@@ -100,15 +89,18 @@
 				comments = newComments;
 			}
 		);
+		const unsub = onSnapshot(doc(db, 'users', data.post.userID), (doc) => {
+			followers = doc.data()!.followers;
+		});
 		return () => {
 			unsubscribe();
+			unsub();
 		};
 	});
 
 	$effect(() => {
-		console.log("post")
-		//console.log("data",data.user.followers)
-		//$inspect(newFollowers);
+		console.log('post');
+		$inspect('data', followers);
 	});
 </script>
 
@@ -126,26 +118,21 @@
 					<Avatar.Image src={data.post.profilePic} alt="@shadcn" />
 					<Avatar.Fallback>JD</Avatar.Fallback>
 				</Avatar.Root>
+				
 				<div>
 					<p class="capitalize font-semibold">{data.post.name}</p>
 					<p class="text-sm text-gray-800">@{data.post.email}</p>
 				</div>
 			</button>
-			{#await follow}
-				{#if data.user.followers.includes(data.userId)}
-					<Button onclick={() => (follow = handleFollowers())} variant="secondary">following</Button
-					>
-				{:else}
-					<Button onclick={() => (follow = handleFollowers())}>follow</Button>
-				{/if}
-			{:then _}
-				{#if data.user.followers.includes(data.userId)}
-					<Button onclick={() => (follow = handleFollowers())} variant="secondary">following</Button
-					>
-				{:else}
-					<Button onclick={() => (follow = handleFollowers())}>follow</Button>
-				{/if}
-			{/await}
+
+			{#if followers.includes(data.userId)}
+				<Button onclick={() => (follow = handleFollowers(true))} variant="secondary"
+					>following</Button
+				>
+			{:else}
+				<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
+			{/if}
+
 		</div>
 		<p class="py-3">
 			{data.post.tweet}

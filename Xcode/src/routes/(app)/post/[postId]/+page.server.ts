@@ -5,7 +5,7 @@ import { redirect } from '@sveltejs/kit';
 
 export const load = async ({ depends, params }) => {
 	const { postId } = params;
-	depends(postId);
+	depends("pro");
 	const getPost = async (id: string) => {
 		try {
 			const postSnap = await getDoc(doc(db, 'posts', id));
