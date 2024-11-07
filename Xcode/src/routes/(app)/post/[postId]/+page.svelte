@@ -21,31 +21,26 @@
 	import type { DocumentData } from 'firebase-admin/firestore';
 	import TweetComment from '$lib/components/TweetComment.svelte';
 	import { redirect } from '@sveltejs/kit';
+	import { connectStorageEmulator } from 'firebase/storage';
 
 	let { data }: { data: { user: IUser; userId: string; comments: Comment[]; post: IPost } } =
 		$props();
 	let comment = $state('');
-	let comments = $state(data.comments);
+	let comments = $state<Comment[]>([]);
 
-	const handleLikes = async () => {
-		let newLikes;
-		const postRef = doc(db, 'posts', $page.params.postId);
-		if (data.post.likes.includes(data.userId)) {
-			newLikes = data.post.likes.filter((id: string) => id !== data.userId);
-		} else {
-			newLikes = [...data.post.likes, data.userId];
+	const handleLikes = async (cond: boolean = false) => {
+		if(cond){
+			try {
+				likes = await (
+					await fetch(`http://localhost:5173/api?post=${$page.params.postId}`, { method: 'PUT' })
+				).json();
+			} catch (e) {
+				console.error('Failed to update followers:', e);
+				invalidate('pros');
+			}
+	
+			invalidate('pros');
 		}
-		data.post.likes = newLikes;
-
-		try {
-			await updateDoc(postRef, {
-				likes: newLikes
-			});
-		} catch (error) {
-			console.error('Failed to update likes:', error);
-			invalidate(data.post.id);
-		}
-		invalidate(data.post.id);
 	};
 
 	const handleFollowers = async (cond: boolean = false) => {
@@ -57,10 +52,10 @@
 					).json();
 				} catch (e) {
 					console.error('Failed to update followers:', e);
-					invalidate('pro');
+					invalidate('pros');
 				}
 
-				invalidate('pro');
+				invalidate('pros');
 			}
 		}
 	};
@@ -68,6 +63,7 @@
 	let like = $state(handleLikes());
 	let follow = $state(handleFollowers());
 	let followers = $state<string[]>([]);
+	let likes = $state<string[]>([]);
 
 	onMount(() => {
 		const getFollower = async () => {
@@ -75,7 +71,10 @@
 			followers = await response.json();
 		};
 
-		getFollower();
+		const getLikes = async () => {
+			const response = await fetch(`http://localhost:5173/api?post=${$page.params.postId}`);
+			likes = await response.json();
+		};
 
 		const q = query(collection(db, 'comments'), where('postId', '==', $page.params.postId));
 		const unsubscribe = onSnapshot(
@@ -83,24 +82,36 @@
 			(querySnapshot: QuerySnapshot<DocumentData, DocumentData>) => {
 				let newComments: Comment[] = [];
 				querySnapshot.forEach((doc) => {
-					newComments.push(doc.data() as Comment);
+					newComments.push({id:doc.ref.id, ...doc.data()} as Comment);
 				});
-
+				
 				comments = newComments;
 			}
 		);
-		const unsub = onSnapshot(doc(db, 'users', data.post.userID), (doc) => {
-			followers = doc.data()!.followers;
+		
+		const Funsub = onSnapshot(doc(db, 'users', data.post.userID), (doc) => {
+			followers = [...doc.data()!.followers];
 		});
+
+		const Lunsub = onSnapshot(doc(db, 'posts', $page.params.postId), (doc) => {
+			likes = [...doc.data()!.likes];
+		});
+		
+		getFollower();
+		getLikes();
+		
 		return () => {
 			unsubscribe();
-			unsub();
+			Funsub();
+			Lunsub();
 		};
 	});
 
 	$effect(() => {
 		console.log('post');
-		$inspect('data', followers);
+		$inspect('f', followers);
+		$inspect('l', likes);
+		$inspect('c', comments);
 	});
 </script>
 
@@ -142,36 +153,21 @@
 		{/if}
 
 		<div class="flex gap-3 text-sm mt-2">
-			{#await like}
 				<button
-					onclick={() => (like = handleLikes())}
+					onclick={() => (like = handleLikes(true))}
 					class="flex transition-all group items-center gap-2 text-gray-600"
 				>
 					<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-						{#if data.post.likes.includes(data.userId)}
+						{#if likes.includes(data.userId)}
 							<HeartFilled class=" text-blue-500 " />
 						{:else}
 							<Heart class=" group-hover:text-blue-500 " />
 						{/if}
 					</div>
-					<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
+					<span class="group-hover:text-blue-500"> {likes.length} </span>
 				</button>
-			{:then _}
-				<button
-					onclick={() => (like = handleLikes())}
-					class="flex transition-all group items-center gap-2 text-gray-600"
-				>
-					<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-						{#if data.post.likes.includes(data.userId)}
-							<HeartFilled class=" text-blue-500 " />
-						{:else}
-							<Heart class=" group-hover:text-blue-500 " />
-						{/if}
-					</div>
-					<span class="group-hover:text-blue-500"> {data.post.likes.length} </span>
-				</button>
-			{/await}
-			<button class="flex transition-all group items-center gap-2 text-gray-600">
+			
+				<button class="flex transition-all group items-center gap-2 text-gray-600">
 				<div class="p-1 rounded-full group-hover:bg-green-500/20">
 					<ChatBubble class=" group-hover:text-green-500 " />
 				</div>
@@ -199,7 +195,7 @@
 					name: data.user.name,
 					email: data.user.email,
 					profilePic: data.user.profilePic,
-					postId: data.post.id
+					postId: $page.params.postId
 				});
 			}}
 			disabled={comment.length < 1}>comment</Button
@@ -208,6 +204,7 @@
 	<div class="w-full">
 		{#each comments as comment}
 			<TweetComment
+				id = {comment.id}
 				likes={new Array<string>()}
 				avatar={comment.profilePic}
 				name={comment.name}

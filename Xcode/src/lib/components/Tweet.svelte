@@ -45,25 +45,17 @@
 	let comments: Comment[] = $state([]);
 
 	const handleLikes = async (cond: boolean = false) => {
-		if (cond) {
-			let newLikes;
-			const postRef = doc(db, 'posts', id);
-			if (likes.includes(userId)) {
-				newLikes = likes.filter((id: string) => id !== userId);
-			} else {
-				newLikes = [...likes, userId];
-			}
-			likes = newLikes;
-
+		if(cond){
 			try {
-				await updateDoc(postRef, {
-					likes: newLikes
-				});
-			} catch (error) {
-				console.error('Failed to update likes:', error);
-				invalidate(id);
+				likes = await (
+					await fetch(`http://localhost:5173/api?post=${id}`, { method: 'PUT' })
+				).json();
+			} catch (e) {
+				console.error('Failed to update followers:', e);
+				//invalidate('pros');
 			}
-			invalidate(id);
+	
+			//invalidate('pros');
 		}
 	};
 
@@ -83,6 +75,16 @@
 	let del = $state(deletePost());
 
 	onMount(() => {
+
+		const getLikes = async () => {
+			const response = await fetch(`http://localhost:5173/api?post=${id}`);
+			likes = await response.json();
+		};
+
+		const Lunsub = onSnapshot(doc(db, 'posts', id), (doc) => {
+			likes = [...doc.data()!.likes];
+		});
+
 		const q = query(collection(db, 'comments'), where('postId', '==', id));
 		const unsubscribe = onSnapshot(
 			q,
@@ -92,17 +94,22 @@
 					newComments.push(doc.data() as Comment);
 				});
 
-				comments = newComments;
+				comments = [...newComments];
 			}
 		);
+
+		getLikes();
+		
 		return () => {
 			unsubscribe();
+			Lunsub();
 		};
 	});
 </script>
 
-<a
-	href={admin ? '' : `/post/${id}`}
+<!-- href -> admin ? '' : `/post/${id}` -->
+<a  
+	 href={''} 
 	class="flex gap-2 items-center justify-center"
 >
 	<div class="w-fit h-fit">
@@ -128,7 +135,6 @@
 		{/if}
 
 		<div class="flex gap-3 text-sm p-3">
-			{#await like}
 				<button
 					onclick={() => (like = handleLikes(true))}
 					class="flex transition-all group items-center gap-2 text-gray-600"
@@ -142,22 +148,7 @@
 					</div>
 					<span class="group-hover:text-blue-500"> {likes.length} </span>
 				</button>
-			{:then _}
-				<button
-					onclick={() => (like = handleLikes(true))}
-					class="flex transition-all group items-center gap-2 text-gray-600"
-				>
-					<div class="p-1 rounded-full group-hover:bg-blue-500/20">
-						{#if likes.includes(userId)}
-							<HeartFilled class=" text-blue-500 " />
-						{:else}
-							<Heart class=" group-hover:text-blue-500 " />
-						{/if}
-					</div>
-					<span class="group-hover:text-blue-500"> {likes.length} </span>
-				</button>
-			{/await}
-
+			
 			<button class="flex transition-all group items-center gap-2 text-gray-600">
 				<div class="p-1 rounded-full group-hover:bg-green-500/20">
 					<ChatBubble class=" group-hover:text-green-500 " />

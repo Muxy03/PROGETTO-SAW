@@ -80,9 +80,9 @@
 </script>
 
 <div
-	class="fixed bottom-0 z-50 w-full rounded-lg -translate-x-1/2 bg-white border-t border-gray-200 left-1/2 dark:bg-gray-700 dark:border-gray-600"
+	class="sticky bottom-0 z-50 w-72 rounded-lg -translate-x-1/2 bg-white border-t border-gray-200 left-1/2 dark:bg-transparent dark:border-gray-600"
 >
-	<div class="w-full">
+	<!-- <div class="w-full">
 		<div
 			class="grid max-w-xs grid-cols-3 gap-1 p-1 mx-auto my-2 bg-gray-100 rounded-lg dark:bg-gray-600"
 			role="group"
@@ -106,7 +106,7 @@
 				Following
 			</button>
 		</div>
-	</div>
+	</div> -->
 	<div class="grid h-full max-w-lg grid-cols-5 mx-auto">
 		{#each sidebarOptions as Component}
 			{#if Component === ThickArrowLeft}

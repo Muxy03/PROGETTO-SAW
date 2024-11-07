@@ -30,55 +30,42 @@
 	}: { data: { localId: string; localUser: IUser; user: IUser; userId: string; posts: IPost[] } } =
 		$props();
 
-	// const handleLikes = async () => {
-	// 	let newLikes;
-	// 	const postRef = doc(db, 'posts', $page.params.postId);
-	// 	if (data.post.likes.includes(data.userId)) {
-	// 		newLikes = data.post.likes.filter((id: string) => id !== data.userId);
-	// 	} else {
-	// 		newLikes = [...data.post.likes, data.userId];
-	// 	}
-	// 	data.post.likes = newLikes;
-
-	// 	try {
-	// 		await updateDoc(postRef, {
-	// 			likes: newLikes
-	// 		});
-	// 	} catch (error) {
-	// 		console.error('Failed to update likes:', error);
-	// 		invalidate($page.params.postId);
-	// 	}
-	// 	invalidate($page.params.postId);
-	// };
-	const handleFollowers = async (cond:boolean = false) => {
-		if(cond){
+	const handleFollowers = async (cond: boolean = false) => {
+		if (cond) {
 			if (data.userId !== data.localId) {
 				try {
-					data.user.followers = await (
+					followers = await (
 						await fetch(`http://localhost:5173/api?user=${data.userId}`, { method: 'PUT' })
 					).json();
 				} catch (e) {
 					console.error('Failed to update followers:', e);
-					invalidate("pro");
+					invalidate('pro');
 				}
-	
-				invalidate("pro");
+
+				invalidate('pro');
 			}
 		}
 	};
 
-	let followers: string[] = $state([]);
+	let posts: IPost[] = $state([]);
 	let follow = $state(handleFollowers());
-
-	// let like = $state(handleLikes());
+	let followers: string[] = $state([]);
 
 	onMount(() => {
-		//TODO: query come x comments ma per posts
-
 		const getFollower = async () => {
 			const response = await fetch(`http://localhost:5173/api?user=${data.userId}`);
 			followers = await response.json();
 		};
+
+		const q = query(collection(db, 'posts'), where('userID', '==', $page.params.userId));
+		const unsubscribe = onSnapshot(q, (querySnapshot) => {
+			let newPosts: IPost[] = [];
+			querySnapshot.forEach((doc) => {
+				newPosts.push({id:doc.ref.id,...doc.data()} as IPost);
+			});
+
+			posts = [...newPosts];
+		});
 
 		const unsub = onSnapshot(doc(db, 'users', data.userId), (doc) => {
 			followers = doc.data()!.followers;
@@ -86,14 +73,15 @@
 
 		getFollower();
 
-		return () =>{
+		return () => {
+			unsubscribe();
 			unsub();
-		}
+		};
 	});
 
 	$effect(() => {
 		console.log('user');
-		$inspect("data",followers)
+		$inspect('data', followers);
 	});
 </script>
 
@@ -110,24 +98,26 @@
 			</div>
 
 			<div class="flex flex-col items-center">
-				<p>{data.posts.length}</p>
+				<p>{posts.length}</p>
 				<p>Posts</p>
 			</div>
 
 			<div class="flex flex-col items-center">
-				<p>{data.user.followers.length}</p>
+				<p>{followers.length}</p>
 				<p>Followers</p>
 			</div>
 			{#await follow}
-				{#if data.user.followers.includes(data.localId)}
-					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary">following</Button
+				{#if followers.includes(data.localId)}
+					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary"
+						>following</Button
 					>
 				{:else}
 					<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
 				{/if}
 			{:then _}
-				{#if data.user.followers.includes(data.localId)}
-					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary">following</Button
+				{#if followers.includes(data.localId)}
+					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary"
+						>following</Button
 					>
 				{:else}
 					<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
@@ -141,9 +131,9 @@
 			cumque eius quo error nam.
 		</p>
 
-		{#if data.posts.length > 0}
+		{#if posts.length > 0}
 			<div class="min-h-screen overflow-y-auto">
-				{#each data.posts as post}
+				{#each posts as post}
 					<Tweet
 						admin={data.userId === data.localId ? data.localId : undefined}
 						email={post.email}
