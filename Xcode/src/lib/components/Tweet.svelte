@@ -107,9 +107,8 @@
 	});
 </script>
 
-<!-- href -> admin ? '' : `/post/${id}` -->
 <a  
-	 href={''} 
+	 href={admin ? '' : `/post/${id}`} 
 	class="flex gap-2 items-center justify-center"
 >
 	<div class="w-fit h-fit">
