@@ -12,7 +12,7 @@ export async function POST({ request, cookies }) {
         cookies.set('__session', sessionCookie, options);
         return json({ status: 'signedIn' });
     } else {
-        throw error(401, 'Recent sign in required!');
+        error(401, 'Recent sign in required!');
     }
 }
 

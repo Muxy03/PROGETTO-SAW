@@ -19,3 +19,11 @@ export interface Comment extends IPost{
 export interface HTMLInputEvent extends Event {
     target: HTMLInputElement & EventTarget;
 }
+
+export interface Toast {
+	id:string,
+	msg:string,
+	type:string,
+	removeAfter:number,
+	visible:boolean
+}

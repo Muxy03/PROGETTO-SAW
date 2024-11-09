@@ -15,7 +15,7 @@ export const load = async ({ depends, locals, params }) => {
 			return docSnap.data();
 		} catch (e) {
 			console.error(e);
-			throw error(400, 'an error occured');
+			error(400, 'an error occured');
 		}
 	};
 
@@ -32,7 +32,7 @@ export const load = async ({ depends, locals, params }) => {
 			return res;
 		} catch (e) {
 			console.error(e);
-			throw error(400, 'an error occured');
+			error(400, 'an error occured');
 		}
 	};
 	if (localId) {

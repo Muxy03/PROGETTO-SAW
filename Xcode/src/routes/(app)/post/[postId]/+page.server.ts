@@ -12,7 +12,7 @@ export const load = async ({ depends, params }) => {
 			return postSnap.data();
 		} catch (e) {
 			console.error(e);
-			throw redirect(303, '/');
+			redirect(303, '/');
 		}
 	};
 
@@ -29,7 +29,7 @@ export const load = async ({ depends, params }) => {
 	const post = await getPost(postId);
 	const comments = await getComments(postId);
 	if (post === undefined) {
-		throw redirect(303, '/');
+		redirect(303, '/');
 	} else {
 		return {
 			comments,

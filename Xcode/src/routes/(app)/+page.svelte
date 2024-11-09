@@ -1,41 +1,40 @@
 <script lang="ts">
+	import { addToast } from '$lib';
 	import Tweet from '$lib/components/Tweet.svelte';
 	import { db } from '$lib/firebase';
 	import type { IPost, IUser } from '$lib/types';
-	import { doc,getDoc } from 'firebase/firestore';
+	import { doc, getDoc } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 
 	let { data }: { data: { userId: string; user: IUser; posts: IPost[] } } = $props();
-	let coso:string[] = [];
-	
-	const following = async() =>{
-		const usersId = [...data.posts].map((post) => post.userID).filter((id)=> id !== data.userId);
-		const usersRef:any[] = [];
-		usersId.forEach((id)=>{
-			usersRef.push(doc(db, 'users', id));
-		})
+	let coso: string[] = [];
 
-		for(const ref of usersRef){
+	const following = async () => {
+		const usersId = [...data.posts].map((post) => post.userID).filter((id) => id !== data.userId);
+		const usersRef: any[] = [];
+		usersId.forEach((id) => {
+			usersRef.push(doc(db, 'users', id));
+		});
+
+		for (const ref of usersRef) {
 			const userSnap = await getDoc(ref);
-			if(userSnap.exists()){
-				coso = [...coso,...((userSnap.data() as IUser).followers.filter((id)=> id === data.userId))];
+			if (userSnap.exists()) {
+				coso = [
+					...coso,
+					...(userSnap.data() as IUser).followers.filter((id) => id === data.userId)
+				];
 			}
 		}
 	};
 	let section = $state(0);
 	let f = $state(following());
-
-	onMount(async ()=>{
-		const response = await fetch(`http://localhost:5173/api?user=${data.userId}`,{
-			method:'POST',
-		})
-		console.log(await response.json())
-	})
 </script>
 
 <header class="bg-background/70 sticky border z-10 top-0 left-0 backdrop-blur mb-2">
 	<h1 class="text-center capitalize text-lg font-semibold py-3.5 px-4">home</h1>
-	<div class="grid grid-cols-2 text-md">
+	<div class="grid grid-cols-3 text-md">
+		<button onclick={() => addToast('diocane')}>Add as default info Toast
+		</button>
 		<button
 			onclick={() => (section = 0)}
 			class:disable={section == 1}
@@ -45,7 +44,10 @@
 			for you
 		</button>
 		<button
-			onclick={() =>{section = 1;(f = following())}}
+			onclick={() => {
+				section = 1;
+				f = following();
+			}}
 			class:disable={section == 0}
 			class:active={section == 1}
 			class="py-4 capitalize hover:bg-white/10"
@@ -56,36 +58,35 @@
 </header>
 
 {#if section == 1}
-{#await f}
-<p>LOADING</p>
-{:then _} 
-{#if data.posts.length > 0}
-	<div class="min-h-screen overflow-y-auto">
-		{#each data.posts.filter((post)=> !coso.includes(post.userID)) as post}
-		{@const pp = post.profilePic}
-			<Tweet
-				avatar={pp}
-				email={post.email}
-				img={post.img}
-				name={post.name}
-				tweet={post.tweet}
-				id={post.id}
-				userId={data.userId}
-				likes={post.likes}
-			/>
-		{/each}
-	</div>
-{:else}
-	<div class="min-h-screen flex items-center justify-items-center">
-		<p class="w-full text-center text-5xl">NO Posts</p>
-	</div>
-{/if}
-
-{/await}
+	{#await f}
+		<p>LOADING</p>
+	{:then _}
+		{#if data.posts.length > 0}
+			<div class="min-h-screen overflow-y-auto">
+				{#each data.posts.filter((post) => !coso.includes(post.userID)) as post}
+					{@const pp = post.profilePic}
+					<Tweet
+						avatar={pp}
+						email={post.email}
+						img={post.img}
+						name={post.name}
+						tweet={post.tweet}
+						id={post.id}
+						userId={data.userId}
+						likes={post.likes}
+					/>
+				{/each}
+			</div>
+		{:else}
+			<div class="min-h-screen flex items-center justify-items-center">
+				<p class="w-full text-center text-5xl">NO Posts</p>
+			</div>
+		{/if}
+	{/await}
 {:else if data.posts.length > 0}
 	<div class="min-h-screen flex flex-col gap-5">
 		{#each data.posts as post}
-		{@const pp = post.profilePic}
+			{@const pp = post.profilePic}
 			<Tweet
 				avatar={pp}
 				email={post.email}

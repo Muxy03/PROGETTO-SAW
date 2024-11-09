@@ -79,13 +79,13 @@
 		const q = query(collection(db, 'comments'), where('postId', '==', $page.params.postId));
 		const unsubscribe = onSnapshot(
 			q,
-			(querySnapshot: QuerySnapshot<DocumentData, DocumentData>) => {
+			(querySnapshot: QuerySnapshot) => {
 				let newComments: Comment[] = [];
 				querySnapshot.forEach((doc) => {
 					newComments.push({id:doc.ref.id, ...doc.data()} as Comment);
 				});
 				
-				comments = newComments;
+				comments = [...newComments];
 			}
 		);
 		

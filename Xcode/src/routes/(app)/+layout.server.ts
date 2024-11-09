@@ -11,7 +11,7 @@ export const load = async ({ locals }) => {
             return docSnap.data()
         } catch (e) {
             console.error(e);
-            throw error(400, 'an error occured')
+            error(400, 'an error occured');
         }
     }
 

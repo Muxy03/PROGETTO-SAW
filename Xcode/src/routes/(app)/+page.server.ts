@@ -16,7 +16,7 @@ export const load = async({depends}) =>{
             return res;
         }catch(e){
             console.error(e);
-            throw error(400,'an error occured');
+            error(400,'an error occured');
         }
     }
     return {

@@ -24,6 +24,7 @@
 	import Tweet from '$lib/components/Tweet.svelte';
 	import type { User } from 'firebase/auth';
 	import { connectStorageEmulator } from 'firebase/storage';
+	import { addToast } from '$lib';
 
 	let {
 		data
@@ -32,28 +33,27 @@
 
 	const handleFollowers = async (cond: boolean = false) => {
 		if (cond) {
-			if (data.userId !== data.localId) {
-				try {
-					followers = await (
-						await fetch(`http://localhost:5173/api?user=${data.userId}`, { method: 'PUT' })
-					).json();
-				} catch (e) {
-					console.error('Failed to update followers:', e);
-					invalidate('pro');
-				}
-
+			try {
+				followers = await (
+					await fetch(`http://localhost:5173/api?user=${$page.params.userId}`, { method: 'PUT' })
+				).json();
+			} catch (e) {
+				console.error('Failed to update followers:', e);
 				invalidate('pro');
 			}
+
+			invalidate('pro');
 		}
 	};
 
 	let posts: IPost[] = $state([]);
 	let follow = $state(handleFollowers());
 	let followers: string[] = $state([]);
+	let nf = $derived(followers.length);
 
 	onMount(() => {
 		const getFollower = async () => {
-			const response = await fetch(`http://localhost:5173/api?user=${data.userId}`);
+			const response = await fetch(`http://localhost:5173/api?user=${$page.params.userId}`);
 			followers = await response.json();
 		};
 
@@ -61,13 +61,13 @@
 		const unsubscribe = onSnapshot(q, (querySnapshot) => {
 			let newPosts: IPost[] = [];
 			querySnapshot.forEach((doc) => {
-				newPosts.push({id:doc.ref.id,...doc.data()} as IPost);
+				newPosts.push({ id: doc.ref.id, ...doc.data() } as IPost);
 			});
 
 			posts = [...newPosts];
 		});
 
-		const unsub = onSnapshot(doc(db, 'users', data.userId), (doc) => {
+		const unsub = onSnapshot(doc(db, 'users', $page.params.userId), (doc) => {
 			followers = doc.data()!.followers;
 		});
 
@@ -79,13 +79,12 @@
 		};
 	});
 
-	$effect(() => {
-		console.log('user');
-		$inspect('data', followers);
-	});
+	// $effect(() => {
+	// 	addToast('hai un nuovo follower');
+	// });
 </script>
 
-<div class="py-7">
+<div class="py-2">
 	<div class="flex flex-col px-4 gap-5">
 		<div class="w-full flex flex-row items-center justify-between">
 			<div class="flex flex-col items-center gap-3">
@@ -106,36 +105,29 @@
 				<p>{followers.length}</p>
 				<p>Followers</p>
 			</div>
-			{#await follow}
-				{#if followers.includes(data.localId)}
-					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary"
-						>following</Button
-					>
-				{:else}
-					<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
-				{/if}
-			{:then _}
-				{#if followers.includes(data.localId)}
-					<Button onclick={() => (follow = handleFollowers(true))} variant="secondary"
-						>following</Button
-					>
-				{:else}
-					<Button onclick={() => (follow = handleFollowers(true))}>follow</Button>
-				{/if}
-			{/await}
+			{#if followers.includes(data.localId)}
+				<Button
+					onclick={() => (follow = handleFollowers($page.params.userId !== data.localId))}
+					variant="secondary">following</Button
+				>
+			{:else}
+				<Button onclick={() => (follow = handleFollowers($page.params.userId !== data.localId))}
+					>follow</Button
+				>
+			{/if}
 		</div>
 
-		<p>
+		<p class="py-5 border-b-4 border-red-900">
 			Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae sunt aperiam eum libero
 			provident fuga aspernatur deleniti culpa, totam neque ea, facere placeat sapiente praesentium
 			cumque eius quo error nam.
 		</p>
 
 		{#if posts.length > 0}
-			<div class="min-h-screen overflow-y-auto">
+			<div class="min-h-screen overflow-y-auto flex flex-col items-center gap-3">
 				{#each posts as post}
 					<Tweet
-						admin={data.userId === data.localId ? data.localId : undefined}
+						admin={$page.params.userId === data.localId ? data.localId : undefined}
 						email={post.email}
 						img={post.img}
 						name={post.name}
@@ -153,3 +145,5 @@
 		{/if}
 	</div>
 </div>
+
+<p>CASO</p>

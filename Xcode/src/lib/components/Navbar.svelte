@@ -13,6 +13,8 @@
 	import { v4 as uuidv4 } from 'uuid';
 	import Card from '$lib/components/Card.svelte';
 	import type { IUser } from '$lib/types';
+	import Notification from './Notification.svelte';
+	import { addToast } from '$lib/toastStore.svelte';
 
 	let fileinput: any;
 	let imgFile: any = $state();
@@ -29,9 +31,11 @@
 	let openModal = $state(false);
 	let openlogOut = $state(false);
 	let openSearch = $state(false);
+	let user = $state($page.data.localUser ? $page.data.localUser : $page.data.user);
+	let userId = $state($page.data.localUser ? $page.data.localId : $page.data.userId);
 	let tweet = $state('');
 
-	const sidebarOptions = [Home, MagnifyingGlass, Pencil1, Bell];
+	const sidebarOptions = [Home, MagnifyingGlass, Pencil1];
 
 	const logOut = async () => {
 		const response = await fetch('/login', {
@@ -53,7 +57,7 @@
 		if (cond) {
 			const usersId = [...$page.data.posts]
 				.map((post) => post.userID)
-				.filter((id) => id !== $page.data.userId);
+				.filter((id) => id !== userId);
 			const usersRef: any[] = [];
 
 			usersId.forEach((id) => {
@@ -64,7 +68,7 @@
 				const userSnap = await getDoc(ref);
 				if (userSnap.exists()) {
 					if (
-						(userSnap.data() as IUser).name !== $page.data.userId &&
+						(userSnap.data() as IUser).name !== userId &&
 						usrs.filter((usr) => usr.name === (userSnap.data() as IUser).name).length === 0
 					) {
 						usrs.push(userSnap.data() as IUser);
@@ -107,14 +111,14 @@
 			</button>
 		</div>
 	</div> -->
-	<div class="grid h-full max-w-lg grid-cols-5 mx-auto">
+	<div class="grid h-full max-w-xl grid-cols-5 mx-auto">
 		{#each sidebarOptions as Component}
 			{#if Component === ThickArrowLeft}
 				<button
 					onclick={logOut}
 					data-tooltip-target="tooltip-home"
 					type="button"
-					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+					class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group"
 				>
 					<Component size={30} />
 				</button>
@@ -123,7 +127,7 @@
 					data-tooltip-target="tooltip-post"
 					type="button"
 					onclick={() => (openModal = true)}
-					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+					class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
 				>
 					<Pencil1 size={30} />
 					<span class="sr-only">New post</span>
@@ -133,7 +137,7 @@
 					data-tooltip-target="tooltip-post"
 					type="button"
 					onclick={() => (openSearch = true)}
-					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+					class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
 				>
 					<MagnifyingGlass size={30} />
 					<span class="sr-only">New post</span>
@@ -143,30 +147,30 @@
 					data-tooltip-target="tooltip-post"
 					type="button"
 					onclick={() => goto('/')}
-					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+					class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
 				>
 					<Home size={30} />
 					<span class="sr-only">New post</span>
 				</button>
-			{:else}
-				<button
-					data-tooltip-target="tooltip-home"
-					type="button"
-					class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
-				>
-					<Component size={30} />
-				</button>
 			{/if}
-		{/each}
+			{/each}
+			<button
+				data-tooltip-target="tooltip-home"
+				type="button"
+				onclick={()=> goto(`http://localhost:5173/about/${userId}/notifications/`)}
+				class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
+			>
+				<Notification size={30}/>
+			</button>
 
 		<button
 			onclick={() => (openlogOut = true)}
 			data-tooltip-target="tooltip-settings"
 			type="button"
-			class="inline-flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 group"
+			class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
 		>
 			<Avatar.Root>
-				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" referrerpolicy="no-referrer" />
+				<Avatar.Image src={user.profilePic} alt="@shadcn" referrerpolicy="no-referrer" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 		</button>
@@ -182,7 +186,7 @@
 	<Dialog.Content class="max-h-[500px] overflow-auto ">
 		<div class="flex gap-2">
 			<Avatar.Root>
-				<Avatar.Image src={$page.data.user.profilePic} alt="@shadcn" />
+				<Avatar.Image src={user.profilePic} alt="@shadcn" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 			<div class="flex-1">
@@ -214,18 +218,20 @@
 				onclick={async () => {
 					let url = '';
 					if (imgFile) {
-						const storageRef = ref(storage, `posts/${$page.data.userId}/${uuidv4()}.png`);
+						const storageRef = ref(storage, `posts/${userId}/${uuidv4()}.png`);
 						const result = await uploadString(storageRef, imgFile, 'data_url');
 						url = await getDownloadURL(result.ref);
 					}
 
 					await addDoc(collection(db, 'posts'), {
-						tweet,
-						userID: $page.data.userId,
+						"tweet":tweet,
+						userID: userId,
 						img: url,
 						...$page.data.user,
 						likes: []
 					});
+
+					addToast('Hai pubblicato un nuovo post');
 					tweet = '';
 					invalidate('posts');
 					imgFile = null;
@@ -242,8 +248,9 @@
 		openlogOut = !openlogOut;
 	}}
 >
-	<Dialog.Content class=" max-w-[200px] max-h-[500px] flex items-center justify-center">
+	<Dialog.Content class=" max-w-[300px] max-h-[500px] flex items-center justify-center">
 		<Button onclick={logOut} class="w-20">Log Out</Button>
+		<Button onclick={()=> goto(`http://localhost:5173/about/${userId}`)} class="w-20">About Me</Button>
 	</Dialog.Content>
 </Dialog.Root>
 

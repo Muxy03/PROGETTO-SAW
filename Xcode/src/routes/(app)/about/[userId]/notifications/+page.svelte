@@ -1,0 +1,20 @@
+<script lang="ts">
+	import { addToast, removeToast, toasts } from '$lib/toastStore.svelte';
+</script>
+
+<div class="flex flex-col items-center">
+	{#each toasts as toast (toast.id)}
+		<div class="flex justify-between px-3 py-1 bg-slate-900 items-center gap-1 rounded-lg border border-gray-100 my-3 w-full">
+			<div>
+				<span class="font-mono">{toast.msg}</span>
+			</div>
+			<button type="button" aria-label="visualized notification" onclick={()=>removeToast(toast.id)}>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+				  </svg>
+			</button>
+		</div>
+	{/each}
+	
+	<button type="button" class="border border-gray-600 rounded w-fit px-5" onclick={() => addToast('cbeisovbneoisvnbdionviobebnsionveoiwro')}>Add as default info Toast</button>
+</div>

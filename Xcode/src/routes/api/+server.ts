@@ -3,7 +3,7 @@ import { error, json } from '@sveltejs/kit';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const cacheF = new Map();
-const cacheP = new Map();
+const cacheP = new Map<string, string[]>();
 
 export async function GET(event) {
 	const user = event.url.searchParams.get('user');
@@ -15,26 +15,28 @@ export async function GET(event) {
 
 		if (userSnap.exists()) {
 			cacheF.set(user, [...userSnap.data().followers]);
+		}else{
+			cacheF.delete(user);
 		}
 
-		return json(cacheF.get(user));
+		return json(cacheF.get(user) ?? []);
 	} else if (post !== null) {
 		const postRef = doc(db, 'posts', post);
 		const postSnap = await getDoc(postRef);
 		if (postSnap.exists()) {
 			cacheP.set(post, [...postSnap.data().likes]);
+		}else{
+			cacheP.delete(post)
 		}
-
-		return json(cacheP.get(post));
+		return json(cacheP.get(post) ?? []);
 	}
 
 	error(404, 'NOT FOUND RESOURCE');
 }
 
 export async function POST(event) {
-	error(401, 'già registrato!');
-
-	return json(event);
+	console.log(event);
+	return json('ok');
 }
 
 export async function PUT(event) {
@@ -92,15 +94,21 @@ export async function PUT(event) {
 
 export async function DELETE(event){
 	const comment = event.url.searchParams.get('comment');
+	const post = event.url.searchParams.get('post');
 
 	if(comment !== null){
-		console.log(comment)
 		const commentRef = doc(db,'comments',comment);
 		const commentSnap = await getDoc(commentRef);
 		if(commentSnap.exists()){
 			await deleteDoc(commentRef);
 		}
-		return json({ status: 'ok' });
+	}else if(post !== null){
+		const postRef = doc(db, 'posts', post);
+		const postSnap = await getDoc(postRef);
+		if (postSnap.exists()) {
+			await deleteDoc(postRef);
+		}
 	}
-
+	
+	return json({ status: 'ok' });
 }
