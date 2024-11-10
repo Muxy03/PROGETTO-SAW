@@ -51,7 +51,7 @@
 	};
 
 	let query = $state('');
-	let usrs: IUser[] = $state([]);
+	let usrs: (IUser&{ID:string})[] = $state([]);
 
 	const fusers = async (cond: boolean = false) => {
 		if (cond) {
@@ -71,7 +71,7 @@
 						(userSnap.data() as IUser).name !== userId &&
 						usrs.filter((usr) => usr.name === (userSnap.data() as IUser).name).length === 0
 					) {
-						usrs.push(userSnap.data() as IUser);
+						usrs.push({ID:userSnap.ref.id,...userSnap.data() as IUser} as IUser&{ID:string});
 					}
 				}
 			}
@@ -250,7 +250,7 @@
 >
 	<Dialog.Content class=" max-w-[300px] max-h-[500px] flex items-center justify-center">
 		<Button onclick={logOut} class="w-20">Log Out</Button>
-		<Button onclick={()=> goto(`http://localhost:5173/about/${userId}`)} class="w-20">About Me</Button>
+		<Button onclick={()=> {openlogOut = !openlogOut;goto(`http://localhost:5173/about/${userId}`)}} class="w-20">About Me</Button>
 	</Dialog.Content>
 </Dialog.Root>
 
@@ -279,7 +279,7 @@
 				<p>NO USERS</p>
 			{:else}
 				{#each usrs.filter((usr) => usr.name === query) as usr}
-					<Card Title={usr.name} action={'fanculo'} content={'diocane'} />
+					<Card Title={usr.name} action={usr.ID} content={usr.email} />
 				{/each}
 			{/if}
 		{/await}

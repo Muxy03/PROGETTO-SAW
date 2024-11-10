@@ -8,6 +8,7 @@
 	import { invalidate } from '$app/navigation';
 
 	let {
+		admin,
 		avatar,
 		tweet,
 		email,
@@ -18,6 +19,7 @@
 		likes,
 		id
 	}: {
+		admin?: string;
 		avatar: string;
 		tweet: string;
 		email: string;
@@ -32,7 +34,9 @@
 	const deleteComment = async (cond: boolean = false) => {
 		if (cond) {
 			try {
-				const response = await (await fetch(`http://localhost:5173/api?comment=${id}`, { method: 'DELETE' })).json()
+				const response = await (
+					await fetch(`http://localhost:5173/api?comment=${id}`, { method: 'DELETE' })
+				).json();
 				//console.log(response)
 			} catch (e) {
 				console.error(e);
@@ -46,20 +50,33 @@
 	let del = $state(deleteComment());
 </script>
 
-<div class="flex gap-2 border-t p-4 items-center justify-center">
-	<div class="w-full">
-			<div class="flex flex-row gap-4 justify-aorund items-center">
+{#if admin === undefined}
+	<div class="flex flex-col gap-4 border-t py-3 items-center justify-center">
+		<div class="flex flex-row-reverse w-full items-center justify-between">
+			<div class="flex flex-col items-end gap-3 justify-center">
 				<Avatar.Root>
 					<Avatar.Image src={avatar} alt="@shadcn" />
 					<Avatar.Fallback>JD</Avatar.Fallback>
 				</Avatar.Root>
-				<div>
-					<p class="capitalize font-semibold">{name}</p>
-					<p class="text-sm text-gray-400">@{email}</p>
-				</div>
-				<Button size="icon" class="bg-red-600 top-0" onclick={() => (del = deleteComment(true))}>
-					<CrossCircled></CrossCircled>
-				</Button>
+				<p class="text-center text-sm">{name}</p>
 			</div>
+			<p class="px-4 break-all justify-self-center">{tweet}</p>
+		</div>
 	</div>
-</div>
+{:else}
+	<div class="flex flex-col gap-4 border-t py-3 items-center justify-center">
+		<div class="flex w-full items-center justify-between">
+			<div class="flex flex-col gap-3 justify-center">
+				<Avatar.Root>
+					<Avatar.Image src={avatar} alt="@shadcn" />
+					<Avatar.Fallback>JD</Avatar.Fallback>
+				</Avatar.Root>
+				<p class="text-center text-sm">{name}</p>
+			</div>
+			<p class="px-4 break-all">{tweet}</p>
+			<Button size="icon" class="bg-red-600 top-0" onclick={() => (del = deleteComment(true))}>
+				<CrossCircled size={30}></CrossCircled>
+			</Button>
+		</div>
+	</div>
+{/if}

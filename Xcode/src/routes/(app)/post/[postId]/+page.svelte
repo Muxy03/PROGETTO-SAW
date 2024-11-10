@@ -184,7 +184,8 @@
 			type="text"
 			bind:value={comment}
 			class="bg-transparent flex-1"
-			placeholder="Post your replay"
+			placeholder="Post your replay (max 1024 chars)"
+			maxlength="1024"
 		/>
 		<Button
 			onclick={async () => {
@@ -204,6 +205,7 @@
 	<div class="w-full">
 		{#each comments as comment}
 			<TweetComment
+				admin={data.post.userID === data.userId ? data.userId : undefined}
 				id = {comment.id}
 				likes={new Array<string>()}
 				avatar={comment.profilePic}

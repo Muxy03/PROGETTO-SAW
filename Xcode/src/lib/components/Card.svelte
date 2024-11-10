@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
     import Button from './ui/button/button.svelte';
 
 	let { Title, content, action }  = $props();
@@ -11,5 +12,5 @@
     <p >
         {content}
     </p>
-    <Button>{action}</Button>
+    <Button onclick={() => goto(`http://localhost:5173/about/${action}`)}>About {Title}</Button>
 </div>
