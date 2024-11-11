@@ -13,7 +13,7 @@
 </script>
 
 {#if toast.visible}
-    <div class={toast.type} in:fly={{ y: 50000 }} out:fade>
+    <div class:warn={toast.type === 'warn'} class:info={toast.type === 'info'} class="mx-2 flex justify-between" in:fly={{ y: 50000 }} out:fade>
     <span role="status">
         {@html toast.msg}
     </span>

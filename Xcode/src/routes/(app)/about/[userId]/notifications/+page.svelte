@@ -2,11 +2,16 @@
 	import { addToast, removeToast, toasts } from '$lib/toastStore.svelte';
 </script>
 
-<div class="flex flex-col items-center">
+<div class="min-h-screen flex flex-col items-center justify-center w-full">
+
+	{#if toasts.length === 0}
+		<p class="font-mono text-2xl">NO NOTIFICATIONS</p>
+	{/if}
+
 	{#each toasts as toast (toast.id)}
-		<div class="flex justify-between px-3 py-1 bg-slate-900 items-center gap-1 rounded-lg border border-gray-100 my-3 w-full">
+		<div class="flex justify-between px-3 py-1 bg-slate-900 items-center gap-1 rounded-lg border border-gray-100 my-3">
 			<div>
-				<span class="font-mono">{toast.msg}</span>
+				<span class="font-mono truncate text-sm">{toast.msg}</span>
 			</div>
 			<button type="button" aria-label="visualized notification" onclick={()=>removeToast(toast.id)}>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -16,5 +21,5 @@
 		</div>
 	{/each}
 	
-	<button type="button" class="border border-gray-600 rounded w-fit px-5" onclick={() => addToast('cbeisovbneoisvnbdionviobebnsionveoiwro')}>Add as default info Toast</button>
+	<!-- <button type="button" class="border border-gray-600 rounded w-fit px-5" onclick={() => addToast('cbeisovbneoisvnbdionviobebnsionveoiwro')}>Add as default info Toast</button> -->
 </div>

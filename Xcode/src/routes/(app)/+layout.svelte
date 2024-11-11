@@ -1,21 +1,15 @@
 <script lang="ts">
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Toasts from '$lib/components/Toasts.svelte';
-	let { data, children } = $props();
-
 	import { onMount } from 'svelte';
-	import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
-	import type { IPost } from '$lib/types';
+	import { doc, onSnapshot } from 'firebase/firestore';
 	import { db } from '$lib/firebase';
 	import { addToast } from '$lib';
 
+	let { data, children } = $props();
+
 	let myFollowers = $state<string[]>([]);
 	let cacheFollower = 0;
-	
-	let myPostsIds = $state<string[]>([]);
-	let Comments = $state<{pid:string,count:number}[]>([]);
-	let cacheComment:{pid:string,count:number}[] = [];
-
 
 	onMount(() => {
 		const getFollower = async () => {
@@ -30,31 +24,6 @@
 
 		getFollower();
 
-		///////////////
-		const getPostsIds = async () => {
-			const q = query(collection(db, 'posts'), where('userID', '==', data.userId));
-			const posts = await getDocs(q);
-			if (!posts.empty) {
-				posts.forEach((post) => myPostsIds.push(post.ref.id));
-			}
-		};
-		
-		getPostsIds();
-
-		myPostsIds.forEach((id) => {
-			const q1 = query(collection(db, 'comments'), where('postId', '==', id));
-			const snap = onSnapshot(q1, (querySnapshot) => {
-				let newComments: Comment[] = [];
-				querySnapshot.forEach((doc) => {
-					newComments.push({ id: doc.ref.id, ...doc.data() } as unknown as Comment);
-				});
-
-				Comments.push({pid:id,count:newComments.length});
-				cacheComment.push({pid:id,count:newComments.length});
-			});
-			snap();
-		});
-
 		return () => {
 			unsub();
 		};
@@ -65,21 +34,15 @@
 			addToast('qualcuno ha iniziato a seguirti');
 		}
 		cacheFollower = myFollowers.length;
-		Comments.forEach((comment,ind)=>{
-			if(cacheComment[ind].count < comment.count){
-				addToast('qualcuno ha commentato il post ' + `${comment.pid}`)
-			}
-		})
-		cacheComment = [...Comments];
 	});
 </script>
 
-<Toasts />
-
-<div class="flex flex-col gap-3 max-w-[700px] mx-auto">
-	<main class="min-h-screen scroll-smooth z-10">
-		{@render children()}
-	</main>
-
-	<Navbar />
-</div>
+<!-- <div class="min-h-screen flex flex-col items-center justify-between"> -->
+	<div class=" min-h-full overflow-y-auto flex flex-col gap-2 items-center justify-between bg-background/70 pt-14 pb-20">
+		<Toasts/>
+		<div class="max-h-3/6 p-4">
+			{@render children()}
+		</div>
+		<Navbar />
+	</div>
+<!-- </div> -->

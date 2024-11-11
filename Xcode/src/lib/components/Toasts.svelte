@@ -5,23 +5,24 @@
 </script>
 
 {#if toasts.length}
-<ul class="flex-1">
+<section>
 	{#each toasts as toast (toast.id)}
-	<li animate:flip>
 		<Toast {toast} />
-	</li>
 	{/each}
-</ul>
+</section>
 {/if}
 
-<style>
-	ul {
-		list-style: none;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		width: 100%;
-		position: fixed;
-		bottom: 1em;
-	}
+<style lang="postcss">
+  section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    margin-top: 1rem;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 1000;
+  }
 </style>

@@ -50,33 +50,20 @@
 	let del = $state(deleteComment());
 </script>
 
-{#if admin === undefined}
-	<div class="flex flex-col gap-4 border-t py-3 items-center justify-center">
-		<div class="flex flex-row-reverse w-full items-center justify-between">
-			<div class="flex flex-col items-end gap-3 justify-center">
-				<Avatar.Root>
-					<Avatar.Image src={avatar} alt="@shadcn" />
-					<Avatar.Fallback>JD</Avatar.Fallback>
-				</Avatar.Root>
-				<p class="text-center text-sm">{name}</p>
-			</div>
-			<p class="px-4 break-all justify-self-center">{tweet}</p>
+<div class="flex flex-col gap-4 items-center justify-center border border-white rounded-lg p-3">
+	<div class="flex flex-row w-full items-center justify-between">
+		<div class="flex flex-col items-end gap-3 justify-center">
+			<Avatar.Root>
+				<Avatar.Image src={avatar} alt="@shadcn" />
+				<Avatar.Fallback>JD</Avatar.Fallback>
+			</Avatar.Root>
+			<p class="text-center text-sm">{name}</p>
 		</div>
-	</div>
-{:else}
-	<div class="flex flex-col gap-4 border-t py-3 items-center justify-center">
-		<div class="flex w-full items-center justify-between">
-			<div class="flex flex-col gap-3 justify-center">
-				<Avatar.Root>
-					<Avatar.Image src={avatar} alt="@shadcn" />
-					<Avatar.Fallback>JD</Avatar.Fallback>
-				</Avatar.Root>
-				<p class="text-center text-sm">{name}</p>
-			</div>
-			<p class="px-4 break-all">{tweet}</p>
+		<p class="px-4 break-all justify-self-center">{tweet}</p>
+		{#if admin !== undefined}
 			<Button size="icon" class="bg-red-600 top-0" onclick={() => (del = deleteComment(true))}>
 				<CrossCircled size={30}></CrossCircled>
 			</Button>
-		</div>
+		{/if}
 	</div>
-{/if}
+</div>

@@ -121,8 +121,8 @@
 	<h1 class="capitalize font-semibold text-lg">post</h1>
 </header> -->
 
-<div class="py-7">
-	<div class="px-4">
+<div class="min-h-screen py-4 flex flex-col gap-6">
+	<div class="flex flex-col gap-3">
 		<div class="flex justify-between">
 			<button class="flex flex-row gap-2" onclick={() => goto(`/about/${data.post.userID}`)}>
 				<Avatar.Root>
@@ -174,35 +174,35 @@
 				<span class="group-hover:text-green-500"> {comments.length} </span>
 			</button>
 		</div>
+		<div class="flex items-center justify-between gap-2">
+			<Avatar.Root>
+				<Avatar.Image src={data.user.profilePic} alt="@shadcn" />
+				<Avatar.Fallback>CN</Avatar.Fallback>
+			</Avatar.Root>
+			<input
+				type="text"
+				bind:value={comment}
+				class="bg-transparent flex-1"
+				placeholder="Commenta (max 1024 chars)"
+				maxlength="1024"
+			/>
+			<Button
+				onclick={async () => {
+					const newComment = comment;
+					comment = '';
+					const c = await addDoc(collection(db, 'comments'), {
+						content: newComment,
+						name: data.user.name,
+						email: data.user.email,
+						profilePic: data.user.profilePic,
+						postId: $page.params.postId
+					});
+				}}
+				disabled={comment.length < 1}>comment</Button
+			>
+		</div>
 	</div>
-	<div class="flex gap-2 px-4 py-3">
-		<Avatar.Root>
-			<Avatar.Image src={data.user.profilePic} alt="@shadcn" />
-			<Avatar.Fallback>CN</Avatar.Fallback>
-		</Avatar.Root>
-		<input
-			type="text"
-			bind:value={comment}
-			class="bg-transparent flex-1"
-			placeholder="Post your replay (max 1024 chars)"
-			maxlength="1024"
-		/>
-		<Button
-			onclick={async () => {
-				const newComment = comment;
-				comment = '';
-				const c = await addDoc(collection(db, 'comments'), {
-					content: newComment,
-					name: data.user.name,
-					email: data.user.email,
-					profilePic: data.user.profilePic,
-					postId: $page.params.postId
-				});
-			}}
-			disabled={comment.length < 1}>comment</Button
-		>
-	</div>
-	<div class="w-full">
+	<div class="w-full border-t flex flex-col gap-5">
 		{#each comments as comment}
 			<TweetComment
 				admin={data.post.userID === data.userId ? data.userId : undefined}

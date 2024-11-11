@@ -84,33 +84,8 @@
 </script>
 
 <div
-	class="sticky bottom-0 z-50 w-72 rounded-lg -translate-x-1/2 bg-white border-t border-gray-200 left-1/2 dark:bg-transparent dark:border-gray-600"
+	class="min-w-full fixed bottom-0 h-50px w-full flex justify-center bg-slate-900"
 >
-	<!-- <div class="w-full">
-		<div
-			class="grid max-w-xs grid-cols-3 gap-1 p-1 mx-auto my-2 bg-gray-100 rounded-lg dark:bg-gray-600"
-			role="group"
-		>
-			<button
-				type="button"
-				class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
-			>
-				New
-			</button>
-			<button
-				type="button"
-				class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-gray-900 dark:bg-gray-300 dark:text-gray-900 rounded-lg"
-			>
-				Popular
-			</button>
-			<button
-				type="button"
-				class="flex items-center justify-center px-2 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
-			>
-				Following
-			</button>
-		</div>
-	</div> -->
 	<div class="grid h-full max-w-xl grid-cols-5 mx-auto">
 		{#each sidebarOptions as Component}
 			{#if Component === ThickArrowLeft}
@@ -183,8 +158,8 @@
 		openModal = !openModal;
 	}}
 >
-	<Dialog.Content class="max-h-[500px] overflow-auto ">
-		<div class="flex gap-2">
+	<Dialog.Content class=" w-96 h-fit overflow-auto">
+		<div class="flex gap-3">
 			<Avatar.Root>
 				<Avatar.Image src={user.profilePic} alt="@shadcn" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
@@ -192,7 +167,7 @@
 			<div class="flex-1">
 				<textarea
 					bind:value={tweet}
-					class="overflow-auto bg-transparent w-full outline-none text-xl"
+					class="overflow-auto bg-transparent outline-none text-xl"
 					placeholder="what is happening"
 				>
 				</textarea>
@@ -260,8 +235,8 @@
 		openSearch = !openSearch;
 	}}
 >
-	<Dialog.Content class=" max-w-[500px] max-h-[500px] flex flex-col items-center justify-center">
-		<div class="rounded-md h-fit flex items-center px-2 bg-gray-800 w-96">
+	<Dialog.Content class=" w-96 h-40 flex flex-col items-center justify-center">
+		<div class="rounded-md h-fit flex items-center px-2 bg-gray-800 w-80">
 			<MagnifyingGlass class="h-5 w-5" />
 			<input
 				placeholder="search"

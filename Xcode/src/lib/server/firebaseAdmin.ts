@@ -8,12 +8,12 @@ try {
 		credential: pkg.credential.cert({
 			projectId: FB_PROGETTO_ID,
 			clientEmail: FB_CLIENT_EMAIL,
-			privateKey: FB_PRIVATE_KEY.replace(/\\n/gm, "\n")
+			privateKey: FB_PRIVATE_KEY.replace(/\\n/gm, '\n')
 		})
 	});
-} catch (err: any) {
-	if (!/already exists/u.test(err.message)) {
-		console.error('Firebase Admin Error: ', err.stack);
+} catch (err: unknown) {
+	if (!/already exists/u.test((err as Error).message)) {
+		console.error('Firebase Admin Error: ', (err as Error).stack);
 	}
 }
 

@@ -40,7 +40,7 @@
 	class:hideScroll={true} class="px-5 flex-[0.4] hidden md:items-center md:inline-flex md:px-3 md:w-screen md:flex-col md:h-screen md:sticky md:z-10
     md:top-0 border py-3 gap-5 md:overflow-y-auto"
 >
-	<div class="rounded-md h-fit flex items-center px-2 bg-gray-800 w-full">
+	<div class="rounded-md h-fit flex items-center px-2 bg-gray-800">
 		<MagnifyingGlass class="h-5 w-5" />
 		<input
 			placeholder="search"
