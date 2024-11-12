@@ -26,9 +26,5 @@ export function addToast(msg:string, type = 'info', removeAfter = 5000) {
         visible:true
 	})
 
-	// setTimeout(() => {
-	// 	removeToast(id);
-	// }, removeAfter)
-
 	return id
 }

@@ -1,44 +1,126 @@
 <script lang="ts">
-	import { addToast } from '$lib';
 	import Tweet from '$lib/components/Tweet.svelte';
 	import { db } from '$lib/firebase';
-	import type { IPost, IUser } from '$lib/types';
-	import { doc, getDoc } from 'firebase/firestore';
+	import type { IPost } from '$lib/types';
+	import { collection, doc, getDoc, getDocs, onSnapshot } from 'firebase/firestore';
 	import { onMount } from 'svelte';
-	import logo from "$lib/assets/pwa-64x64.png"
+	import { addToast } from '$lib';
+	import title from '$lib/assets/title.png';
 
-	let { data }: { data: { userId: string; user: IUser; posts: IPost[] } } = $props();
-	let coso: string[] = [];
+	let { data }: { data: { userId: string } } = $props();
 
-	const following = async () => {
-		const usersId = [...data.posts].map((post) => post.userID).filter((id) => id !== data.userId);
-		const usersRef: any[] = [];
-		usersId.forEach((id) => {
-			usersRef.push(doc(db, 'users', id));
+	let Following: string[] = $state([]);
+	let Posts: IPost[] = $state([]);
+	let cacheP: IPost[] = $state([]);
+	let section = $state(0);
+	const unique: { [key: string]: boolean } = {};
+
+	onMount(() => {
+		const notify = async (uid: string) => {
+			const snap = await getDoc(doc(db, 'users', uid));
+			if (snap.exists()) {
+				addToast(`${snap.data().name} ha pubblicato un nuovo post`);
+			}
+		};
+
+		const getFollowing = async () => {
+			const snap = await getDocs(collection(db, 'users'));
+			if (!snap.empty) {
+				snap.forEach((doc) => {
+					if (doc.data().followers.includes(data.userId)) {
+						Following.push(doc.id);
+					}
+				});
+			}
+		};
+
+		const getPosts = async () => {
+			const snap = await getDocs(collection(db, 'posts'));
+			if (!snap.empty) {
+				snap.forEach((doc) => {
+					const post = { id: doc.id, ...doc.data() } as IPost;
+					if (!unique[post.id]) {
+						unique[post.id] = true;
+						Posts = [...[...Posts, post].sort((a, b) => 
+						new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())];
+					}
+				});
+				cacheP = [...Posts];
+			}
+		};
+
+		const Funsub = onSnapshot(collection(db, 'users'), (doc) => {
+			const changes = doc.docChanges();
+			changes.forEach((Doc) => {
+				switch (Doc.type) {
+					case 'added':
+						if (Doc.doc.data().followers.includes(data.userId)) {
+							Following.push(Doc.doc.id);
+						}
+						break;
+					case 'removed':
+						Following = [...Following.filter((id) => id !== Doc.doc.id)];
+						break;
+					case 'modified':
+						if (Doc.doc.data().followers.includes(data.userId)) {
+							Following.push(Doc.doc.id);
+						} else {
+							Following = [...Following.filter((id) => id !== Doc.doc.id)];
+						}
+						break;
+					default:
+						break;
+				}
+			});
 		});
 
-		for (const ref of usersRef) {
-			const userSnap = await getDoc(ref);
-			if (userSnap.exists()) {
-				coso = [
-					...coso,
-					...(userSnap.data() as IUser).followers.filter((id) => id === data.userId)
-				];
-			}
-		}
-	};
-	let section = $state(0);
-	let f = $state(following());
+		const Punsub = onSnapshot(collection(db, 'posts'), (d) => {
+			d.docChanges().forEach((Doc) => {
+				const post = { id: Doc.doc.id, ...Doc.doc.data() } as IPost;
+				switch (Doc.type) {
+					case 'added':
+						if (!unique[post.id]) {
+							unique[post.id] = true;
+							Posts = [...[...Posts, post].sort((a, b) => 
+							new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())];
+						}
+
+						if (cacheP.length > 0 && cacheP.length < Posts.length) {
+							const first = Posts[0];
+							console.log(first.userID);
+							if (Following.includes(first.userID)) {
+								notify(first.userID);
+							}
+							cacheP = [...Posts];
+						}
+						break;
+					case 'removed':
+						console.log('removed a post ', Doc.doc.id);
+						delete unique[Doc.doc.id];
+						Posts = [...Posts.filter((post) => post.id !== Doc.doc.id)];
+						cacheP = [...Posts];
+						break;
+					default:
+						break;
+				}
+			});
+		});
+
+		getFollowing();
+		getPosts();
+
+		return () => {
+			Funsub();
+			Punsub();
+		};
+	});
 </script>
 
-<header class="flex items-center justify-center bg-background/70 fixed border z-10 top-0 left-0 w-full backdrop-blur mb-4">
-	<img src={logo} alt="Logo">
-	<h1 class="text-center capitalize text-2xl font-semibold py-3.5 px-4">
-		XCODE
-	</h1>
-	<!-- <div class="grid grid-cols-3 text-md">
-		<button onclick={() => addToast('diocane')}>Add as default info Toast
-		</button>
+<header
+	class="w-full h-42 flex flex-col items-center justify-center bg-background/70 fixed z-10 top-0 left-0 backdrop-blur mb-4"
+>
+	<img src={title} alt="Title" />
+	<div class=" h-full w-1/2 grid grid-cols-2 text-lg">
 		<button
 			onclick={() => (section = 0)}
 			class:disable={section == 1}
@@ -48,22 +130,39 @@
 			for you
 		</button>
 		<button
-			onclick={() => {
-				section = 1;
-				f = following();
-			}}
+			onclick={() => (section = 1)}
 			class:disable={section == 0}
 			class:active={section == 1}
 			class="py-4 capitalize hover:bg-white/10"
 		>
 			following
 		</button>
-	</div> -->
+	</div>
 </header>
 
-{#if data.posts.length > 0}
-	<div class="min-w-full flex flex-col items-center justify-between gap-3">
-		{#each data.posts.filter((post) => !coso.includes(post.userID)) as post}
+<div class=" pt-44 min-w-full flex flex-col items-center justify-between gap-3 px-4">
+	{#if section === 1}
+		{#if Posts.filter((post) => Following.includes(post.userID)).length > 0}
+			{#each Posts.filter((post) => Following.includes(post.userID)) as post}
+				{@const pp = post.profilePic}
+				<Tweet
+					avatar={pp}
+					email={post.email}
+					img={post.img}
+					name={post.name}
+					tweet={post.tweet}
+					id={post.id}
+					userId={data.userId}
+					likes={post.likes}
+				/>
+			{/each}
+		{:else}
+			<div class="flex items-center justify-items-center">
+				<p class="w-full text-center text-5xl">NO Posts</p>
+			</div>
+		{/if}
+	{:else if Posts.length > 0}
+		{#each Posts as post}
 			{@const pp = post.profilePic}
 			<Tweet
 				avatar={pp}
@@ -76,61 +175,12 @@
 				likes={post.likes}
 			/>
 		{/each}
-	</div>
-{:else}
-	<div class="flex items-center justify-items-center">
-		<p class="w-full text-center text-5xl">NO Posts</p>
-	</div>
-{/if}
-
-<!-- {#if section == 1}
-	{#await f}
-		<p>LOADING</p>
-	{:then _} -->
-<!-- {#if data.posts.length > 0}
-	<div class="w-full flex flex-col items-center justify-around">
-		{#each data.posts.filter((post) => !coso.includes(post.userID)) as post}
-			{@const pp = post.profilePic}
-			<Tweet
-				avatar={pp}
-				email={post.email}
-				img={post.img}
-				name={post.name}
-				tweet={post.tweet}
-				id={post.id}
-				userId={data.userId}
-				likes={post.likes}
-			/>
-		{/each}
-	</div>
-{:else}
-	<div class="flex items-center justify-items-center">
-		<p class="w-full text-center text-5xl">NO Posts</p>
-	</div>
-{/if} -->
-
-<!-- {/await}
-{:else if data.posts.length > 0}
-	<div class="flex flex-col gap-5">
-		{#each data.posts as post}
-			{@const pp = post.profilePic}
-			<Tweet
-				avatar={pp}
-				email={post.email}
-				img={post.img}
-				name={post.name}
-				tweet={post.tweet}
-				id={post.id}
-				userId={data.userId}
-				likes={post.likes}
-			/>
-		{/each}
-	</div>
-{:else}
-	<div class="min-h-screen flex items-center justify-items-center">
-		<p class="w-full text-center text-5xl">NO Posts</p>
-	</div>
-{/if} -->
+	{:else}
+		<div class="flex items-center justify-items-center">
+			<p class="w-full text-center text-5xl">NO Posts</p>
+		</div>
+	{/if}
+</div>
 
 <style>
 	.active {

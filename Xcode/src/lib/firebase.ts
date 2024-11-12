@@ -1,6 +1,4 @@
 import { initializeApp } from "firebase/app";
-//import { getAnalytics } from "firebase/analytics";
-//import { browser } from "$app/environment";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
@@ -16,10 +14,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
-// if (browser) {
-// 	getAnalytics(app);
-// }
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);

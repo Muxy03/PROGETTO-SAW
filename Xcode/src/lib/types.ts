@@ -1,4 +1,5 @@
 export interface IUser {
+	ID:string;
 	name: string;
 	email: string;
 	profilePic: string;
@@ -10,14 +11,12 @@ export interface IPost extends IUser {
 	userID: string;
 	img?: string;
 	likes: string[];
+	timestamp:Date;
 }
 
 export interface Comment extends IPost{
 	content:string;
-}
-
-export interface HTMLInputEvent extends Event {
-    target: HTMLInputElement & EventTarget;
+	creator:string;
 }
 
 export interface Toast {

@@ -1,27 +1,13 @@
 <script lang="ts">
-	import { invalidate } from '$app/navigation';
-	import { page } from '$app/stores';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { db } from '$lib/firebase';
-	import type { DocumentData } from 'firebase-admin/firestore';
-	import {
-		collection,
-		doc,
-		query,
-		where,
-		onSnapshot,
-		QuerySnapshot,
-		updateDoc,
-		getDocs,
-		deleteDoc
-	} from 'firebase/firestore';
-
+	import { collection, doc, query, where, onSnapshot, QuerySnapshot } from 'firebase/firestore';
 	import { CrossCircled, ChatBubble, Heart, HeartFilled } from 'radix-icons-svelte';
 	import { onMount } from 'svelte';
 	import Button from './ui/button/button.svelte';
 
 	let {
-		admin,
+		creator,
 		avatar,
 		tweet,
 		email,
@@ -31,7 +17,7 @@
 		img,
 		likes
 	}: {
-		admin?: string;
+		creator: boolean;
 		avatar?: string;
 		tweet: string;
 		email: string;
@@ -52,24 +38,19 @@
 				];
 			} catch (e) {
 				console.error('Failed to update followers:', e);
-				//invalidate('pros');
 			}
-
-			//invalidate('pros');
 		}
 	};
 
 	const deletePost = async (cond: boolean = false) => {
-		if (admin && cond) {
+		if (creator && cond) {
 			try {
 				const response = await (
 					await fetch(`http://localhost:5173/api?post=${id}`, { method: 'DELETE' })
 				).json();
 			} catch (e) {
 				console.error(e);
-				invalidate(id);
 			}
-			invalidate(id);
 		}
 	};
 
@@ -87,9 +68,7 @@
 		});
 
 		const q = query(collection(db, 'comments'), where('postId', '==', id));
-		const unsubscribe = onSnapshot(
-			q,
-			(querySnapshot: QuerySnapshot<DocumentData, DocumentData>) => {
+		const unsubscribe = onSnapshot(q,(querySnapshot) => {
 				let newComments: Comment[] = [];
 				querySnapshot.forEach((doc) => {
 					newComments.push(doc.data() as Comment);
@@ -108,11 +87,9 @@
 	});
 </script>
 
-<div
-	class=" min-w-full flex flex-col justify-between items-center p-5 border border-white rounded-lg"
->
-	<a href={`http://localhost:5173/post/${id}`} class="">
-		<div class="flex flex-col gap-2">
+<div class=" min-w-full flex flex-col justify-between items-center p-5 border border-white rounded-lg">
+	<a href={`http://localhost:5173/post/${id}`}>
+		<div class="flex flex-col items-center justify-center gap-2">
 			{#if avatar}
 				<div class="flex flex-row gap-4 items-center">
 					<Avatar.Root>
@@ -136,10 +113,7 @@
 		</div>
 	</a>
 	<div class="w-full flex items-center justify-center gap-3 text-sm p-3">
-		<button
-			onclick={() => (like = handleLikes(true))}
-			class="flex transition-all group items-center gap-2 text-gray-600"
-		>
+		<button onclick={() => (like = handleLikes(true))} class="flex transition-all group items-center gap-2 text-gray-600">
 			<div class="p-1 rounded-full group-hover:bg-blue-500/20">
 				{#if likes.includes(userId)}
 					<HeartFilled class=" text-blue-500 " />
@@ -157,15 +131,9 @@
 			<span class="group-hover:text-green-500"> {comments.length} </span>
 		</button>
 	</div>
-	{#if admin}
-		<!-- {#await del} -->
+	{#if creator}
 		<Button size="icon" class="bg-red-600 top-0" onclick={() => (del = deletePost(true))}>
 			<CrossCircled size={30}></CrossCircled>
 		</Button>
-		<!-- {:then _}
-			<Button size="icon" class="bg-red-600 top-0" onclick={() => (del = deletePost(true))}>
-				<CrossCircled size={30}></CrossCircled>
-			</Button>
-		{/await} -->
 	{/if}
 </div>

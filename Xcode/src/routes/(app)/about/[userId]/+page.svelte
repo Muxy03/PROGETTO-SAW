@@ -1,35 +1,15 @@
 <script lang="ts">
-	import { ArrowBottomLeft, ChatBubble, Heart, HeartFilled } from 'radix-icons-svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import {
-		addDoc,
-		collection,
-		doc,
-		getDoc,
-		onSnapshot,
-		query,
-		QuerySnapshot,
-		updateDoc,
-		deleteDoc,
-		where
-	} from 'firebase/firestore';
+	import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 	import { db } from '$lib/firebase';
 	import { page } from '$app/stores';
-	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import type { IPost, IUser, Comment } from '$lib/types';
-	import type { DocumentData } from 'firebase-admin/firestore';
-	import TweetComment from '$lib/components/TweetComment.svelte';
+	import type { IPost, IUser } from '$lib/types';
 	import Tweet from '$lib/components/Tweet.svelte';
-	import type { User } from 'firebase/auth';
-	import { connectStorageEmulator } from 'firebase/storage';
-	import { addToast } from '$lib';
+	import title from '$lib/assets/title.png';
 
-	let {
-		data
-	}: { data: { localId: string; localUser: IUser; user: IUser; userId: string; posts: IPost[] } } =
-		$props();
+	let { data }: { data: { localId: string;} } =$props();
 
 	const handleFollowers = async (cond: boolean = false) => {
 		if (cond) {
@@ -39,19 +19,22 @@
 				).json();
 			} catch (e) {
 				console.error('Failed to update followers:', e);
-				invalidate('pro');
-			}
-
-			invalidate('pro');
+			}			
 		}
 	};
-
+	
+	let user: IUser | undefined = $state();
 	let posts: IPost[] = $state([]);
 	let follow = $state(handleFollowers());
 	let followers: string[] = $state([]);
-	let nf = $derived(followers.length);
 
 	onMount(() => {
+		const getUser = async (uid: string) => {
+			const docRef = doc(db, 'users', uid);
+			const docSnap = await getDoc(docRef);
+			user = docSnap.data() as IUser;
+		};
+
 		const getFollower = async () => {
 			const response = await fetch(`http://localhost:5173/api?user=${$page.params.userId}`);
 			followers = await response.json();
@@ -72,28 +55,31 @@
 		});
 
 		getFollower();
+		getUser($page.params.userId);
 
 		return () => {
 			unsubscribe();
 			unsub();
 		};
 	});
-
-	// $effect(() => {
-	// 	addToast('hai un nuovo follower');
-	// });
 </script>
 
-<div class="py-2">
+<header
+	class="w-full h-42 flex flex-col items-center justify-center bg-background/70 fixed z-10 top-0 left-0 backdrop-blur mb-4"
+>
+	<img src={title} alt="Title" />
+</header>
+
+<div class="pt-24">
 	<div class="flex flex-col px-4 gap-5">
-		<div class="w-full flex flex-row items-center justify-between">
+		<div class="w-full flex flex-row items-center justify-center gap-3">
 			<div class="flex flex-col items-center gap-3">
 				<Avatar.Root>
-					<Avatar.Image src={data.user.profilePic} alt="@shadcn" />
+					<Avatar.Image src={user?.profilePic} alt="@shadcn" />
 					<Avatar.Fallback>JD</Avatar.Fallback>
 				</Avatar.Root>
 
-				<p class="capitalize text-sm">{data.user.name}</p>
+				<p class="capitalize text-sm">{user?.name}</p>
 			</div>
 
 			<div class="flex flex-col items-center">
@@ -116,8 +102,8 @@
 				>
 			{/if}
 		</div>
-
-		<p class="py-5 border-b-4 border-red-900">
+		<p>Description:</p>
+		<p class="py-3 border-b-4 border-red-900">
 			Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae sunt aperiam eum libero
 			provident fuga aspernatur deleniti culpa, totam neque ea, facere placeat sapiente praesentium
 			cumque eius quo error nam.
@@ -127,7 +113,7 @@
 			<div class="min-h-screen overflow-y-auto flex flex-col items-center gap-3">
 				{#each posts as post}
 					<Tweet
-						admin={$page.params.userId === data.localId ? data.localId : undefined}
+						creator={data.localId === post.userID}
 						email={post.email}
 						img={post.img}
 						name={post.name}

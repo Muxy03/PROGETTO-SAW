@@ -1,5 +1,4 @@
 <script>
-	import { flip } from 'svelte/animate'
 	import Toast from '$lib/components/Toast.svelte'
 	import { toasts } from '$lib/toastStore.svelte'
 </script>

@@ -1,39 +1,20 @@
 import { db } from '$lib/firebase';
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import type { Comment } from '$lib/types';
+import type { IPost } from '$lib/types';
 import { redirect } from '@sveltejs/kit';
+import { doc, getDoc } from 'firebase/firestore';
 
-export const load = async ({ depends, params }) => {
+export const load = async ({ params }) => {
 	const { postId } = params;
-	depends("pros");
-	const getPost = async (id: string) => {
-		try {
-			const postSnap = await getDoc(doc(db, 'posts', id));
-			return postSnap.data();
-		} catch (e) {
-			console.error(e);
-			redirect(303, '/');
+    
+	const getPost = async (uid: string) => {
+		const postSnap = await getDoc(doc(db, 'posts', uid));
+		if (postSnap.exists()) {
+			return { ...postSnap.data() } as IPost;
 		}
 	};
-
-	const getComments = async (postId: string) => {
-		const comments: Comment[] = [];
-		const q = query(collection(db, 'comments'), where('postId', '==', postId));
-		const qSnapshot = await getDocs(q);
-		qSnapshot.forEach((doc) => {
-			comments.push({ id: doc.id, ...doc.data() } as Comment);
-		});
-		return comments;
-	};
-
-	const post = await getPost(postId);
-	const comments = await getComments(postId);
-	if (post === undefined) {
-		redirect(303, '/');
+	if (postId) {
+		return { post: await getPost(postId) };
 	} else {
-		return {
-			comments,
-			post
-		};
+		redirect(303, '/');
 	}
 };

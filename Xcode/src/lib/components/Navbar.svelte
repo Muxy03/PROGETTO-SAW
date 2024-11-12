@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { Bell, Home, Image, MagnifyingGlass, Pencil1, ThickArrowLeft } from 'radix-icons-svelte';
-	//import Logo from '$lib/images/logo.png';
+	import {Home, Image, MagnifyingGlass, Pencil1, ThickArrowLeft } from 'radix-icons-svelte';
 	import Button from './ui/button/button.svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { page } from '$app/stores';
-	import { goto, invalidate } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { signOut } from 'firebase/auth';
 	import { auth, db, storage } from '$lib/firebase';
 	import { getDownloadURL, ref, uploadString } from 'firebase/storage';
@@ -14,11 +13,10 @@
 	import Card from '$lib/components/Card.svelte';
 	import type { IUser } from '$lib/types';
 	import Notification from './Notification.svelte';
-	import { addToast } from '$lib/toastStore.svelte';
+	import { onMount } from 'svelte';
 
-	let fileinput: any;
-	let imgFile: any = $state();
-
+	let { data } : { data: { userId:string } } = $props()
+	
 	const onFileSelected = (e: any): void => {
 		let image = e.target.files![0];
 		let reader = new FileReader();
@@ -27,15 +25,6 @@
 			imgFile = e.target?.result;
 		};
 	};
-
-	let openModal = $state(false);
-	let openlogOut = $state(false);
-	let openSearch = $state(false);
-	let user = $state($page.data.localUser ? $page.data.localUser : $page.data.user);
-	let userId = $state($page.data.localUser ? $page.data.localId : $page.data.userId);
-	let tweet = $state('');
-
-	const sidebarOptions = [Home, MagnifyingGlass, Pencil1];
 
 	const logOut = async () => {
 		const response = await fetch('/login', {
@@ -50,14 +39,9 @@
 		}
 	};
 
-	let query = $state('');
-	let usrs: (IUser&{ID:string})[] = $state([]);
-
 	const fusers = async (cond: boolean = false) => {
 		if (cond) {
-			const usersId = [...$page.data.posts]
-				.map((post) => post.userID)
-				.filter((id) => id !== userId);
+			const usersId = [...$page.data.posts].map((post) => post.userID).filter((id) => id !== userId);
 			const usersRef: any[] = [];
 
 			usersId.forEach((id) => {
@@ -71,21 +55,45 @@
 						(userSnap.data() as IUser).name !== userId &&
 						usrs.filter((usr) => usr.name === (userSnap.data() as IUser).name).length === 0
 					) {
-						usrs.push({ID:userSnap.ref.id,...userSnap.data() as IUser} as IUser&{ID:string});
+						usrs.push({ ...userSnap.data() as IUser});
 					}
 				}
 			}
 		}
 	};
 
+	let openModal = $state(false);
+	let openlogOut = $state(false);
+	let openSearch = $state(false);
+	let user:IUser|undefined = $state();
+	let userId = $state($page.data.userId);
+	let tweet = $state('');
+	let imgFile: any = $state();
+	let fileinput: any;
+	let query = $state('');
+	let usrs: IUser[] = $state([]);
 	let users = $state(fusers());
+	
+	const sidebarOptions = [Home, MagnifyingGlass, Pencil1];
+
+	onMount(() => {
+		const getUser = async (uid: string) => {
+		    try {
+		        const docRef = doc(db, 'users', uid);
+		        const docSnap = await getDoc(docRef);
+		        user = docSnap.data() as IUser;
+		    } catch (e) {
+		        console.error(e);
+			}
+		}
+
+		getUser(data.userId);
+	});
 
 	$effect(() => {});
 </script>
 
-<div
-	class="min-w-full fixed bottom-0 h-50px w-full flex justify-center bg-slate-900"
->
+<div class="min-w-full fixed bottom-0 h-50px w-full flex justify-center bg-slate-900">
 	<div class="grid h-full max-w-xl grid-cols-5 mx-auto">
 		{#each sidebarOptions as Component}
 			{#if Component === ThickArrowLeft}
@@ -128,15 +136,15 @@
 					<span class="sr-only">New post</span>
 				</button>
 			{/if}
-			{/each}
-			<button
-				data-tooltip-target="tooltip-home"
-				type="button"
-				onclick={()=> goto(`http://localhost:5173/about/${userId}/notifications/`)}
-				class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
-			>
-				<Notification size={30}/>
-			</button>
+		{/each}
+		<button
+			data-tooltip-target="tooltip-home"
+			type="button"
+			onclick={() => goto(`http://localhost:5173/about/${userId}/notifications/`)}
+			class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
+		>
+			<Notification size={30} />
+		</button>
 
 		<button
 			onclick={() => (openlogOut = true)}
@@ -145,7 +153,7 @@
 			class="inline-flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 group rounded-lg"
 		>
 			<Avatar.Root>
-				<Avatar.Image src={user.profilePic} alt="@shadcn" referrerpolicy="no-referrer" />
+				<Avatar.Image src={user === undefined ? '' : user.profilePic} alt="@shadcn" referrerpolicy="no-referrer" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 		</button>
@@ -161,13 +169,13 @@
 	<Dialog.Content class=" w-96 h-fit overflow-auto">
 		<div class="flex gap-3">
 			<Avatar.Root>
-				<Avatar.Image src={user.profilePic} alt="@shadcn" />
+				<Avatar.Image src={user === undefined ? '' : user.profilePic} alt="@shadcn" />
 				<Avatar.Fallback>JD</Avatar.Fallback>
 			</Avatar.Root>
 			<div class="flex-1">
 				<textarea
 					bind:value={tweet}
-					class="overflow-auto bg-transparent outline-none text-xl"
+					class="w-full overflow-auto bg-transparent outline-none text-xl"
 					placeholder="what is happening"
 				>
 				</textarea>
@@ -199,16 +207,15 @@
 					}
 
 					await addDoc(collection(db, 'posts'), {
-						"tweet":tweet,
+						tweet: tweet,
 						userID: userId,
 						img: url,
-						...$page.data.user,
-						likes: []
+						...user,
+						likes: [],
+						timestamp:Date.now()
 					});
 
-					addToast('Hai pubblicato un nuovo post');
 					tweet = '';
-					invalidate('posts');
 					imgFile = null;
 					openModal = !openModal;
 				}}>Post</Button
@@ -225,7 +232,13 @@
 >
 	<Dialog.Content class=" max-w-[300px] max-h-[500px] flex items-center justify-center">
 		<Button onclick={logOut} class="w-20">Log Out</Button>
-		<Button onclick={()=> {openlogOut = !openlogOut;goto(`http://localhost:5173/about/${userId}`)}} class="w-20">About Me</Button>
+		<Button
+			onclick={() => {
+				openlogOut = !openlogOut;
+				goto(`http://localhost:5173/about/${userId}`);
+			}}
+			class="w-20">About Me</Button
+		>
 	</Dialog.Content>
 </Dialog.Root>
 
@@ -235,13 +248,13 @@
 		openSearch = !openSearch;
 	}}
 >
-	<Dialog.Content class=" w-96 h-40 flex flex-col items-center justify-center">
-		<div class="rounded-md h-fit flex items-center px-2 bg-gray-800 w-80">
+	<Dialog.Content class=" w-1/2 max-h-fit flex flex-col items-center justify-center">
+		<div class="rounded-md flex items-center px-2 mt-3 bg-gray-800 w-full">
 			<MagnifyingGlass class="h-5 w-5" />
 			<input
 				placeholder="search"
 				type="text"
-				class="h-10 px-2 outline-none bg-transparent flex-1"
+				class=" w-full h-10 px-2 outline-none bg-transparent flex-1"
 				onkeypress={() => (users = fusers(true))}
 				bind:value={query}
 			/>
@@ -251,7 +264,7 @@
 			<p>LOADING ...</p>
 		{:then _}
 			{#if query.length === 0 || usrs.filter((usr) => usr.name == query).length === 0}
-				<p>NO USERS</p>
+				<p class="text-center">NO USERS</p>
 			{:else}
 				{#each usrs.filter((usr) => usr.name === query) as usr}
 					<Card Title={usr.name} action={usr.ID} content={usr.email} />

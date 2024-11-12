@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { addToast, removeToast, toasts } from '$lib/toastStore.svelte';
+	import { removeToast, toasts } from '$lib/toastStore.svelte';
 </script>
 
 <div class="min-h-screen flex flex-col items-center justify-center w-full">
@@ -20,6 +20,4 @@
 			</button>
 		</div>
 	{/each}
-	
-	<!-- <button type="button" class="border border-gray-600 rounded w-fit px-5" onclick={() => addToast('cbeisovbneoisvnbdionviobebnsionveoiwro')}>Add as default info Toast</button> -->
 </div>

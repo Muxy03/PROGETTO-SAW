@@ -34,11 +34,6 @@ export async function GET(event) {
 	error(404, 'NOT FOUND RESOURCE');
 }
 
-export async function POST(event) {
-	console.log(event);
-	return json('ok');
-}
-
 export async function PUT(event) {
 	const user_following = event.url.searchParams.get('user');
 	const post = event.url.searchParams.get('post');
